@@ -8,9 +8,9 @@ use typic::{
 #[typic::repr(C)]
 #[derive(Default)]
 struct Opaque {
-    a: u8,
+    pub a: u8,
     b: u8,
-    c: u16,
+    pub c: u16,
 }
 
 // To safely transmute `Opaque`, the `Invariants` trait must be implemented for it manually.
