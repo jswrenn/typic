@@ -2,6 +2,9 @@
 
 Type-safe transmutations between layout-compatible types. See `./typic/tests/` for usage examples. **Note: This is a minimally viable proof-of-concept and it not suitable for real-world use.**
 
+[![Documentation](https://docs.rs/typic/badge.svg)](https://docs.rs/typic/)
+[![Crates.io](https://img.shields.io/crates/v/typic.svg)](https://crates.io/crates/typic/0.1.0)
+
 ## What?
 
 The trait `TransmuteFrom<T>` is implemented for `U` if it is sound to transmute an instance of `T` into an instance of `U`. Like this:
@@ -24,7 +27,7 @@ struct Bar(pub u16, pub u32);
 let padded = Bar::transmute_from(Foo::default());
 
 // `Bar` cannot be safely converted to `Foo` because doing so would expose
-// uninitialized bytes as if it were initialized!
+// uninitialized bytes as if they were initialized!
 assert_not_impl_any!(Foo: TransmuteFrom<Bar>);
 ```
 
