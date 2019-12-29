@@ -1,20 +1,10 @@
 use crate::alignedto::AlignedTo;
-use crate::hlist::*;
 use crate::layout::{Init, Layout, NonZero, Uninit};
 use crate::transmute::Candidate;
 use core::mem;
+use frunk_core::hlist::*;
+use frunk_core::Hlist;
 use static_assertions::*;
-
-// I'd like to put this in the hlist module, but couldn't figure out how to do
-// so without exporting the type.
-macro_rules! Hlist {
-    () => { $crate::hlist::HNil };
-    (...$Rest:ty) => { $Rest };
-    ($A:ty) => { Hlist![$A,] };
-    ($A:ty, $($tok:tt)*) => {
-        $crate::hlist::HCons<$A, Hlist![$($tok)*]>
-    };
-}
 
 /// A valid instance of `T` is also a valid instance of `Self`
 pub unsafe trait TransmuteFrom<T> {

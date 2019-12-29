@@ -7,26 +7,7 @@ mod transmutation;
 
 /// Types used to represent the structure of compound types.
 pub mod structure {
-    use core::marker::PhantomData;
-
-    /// A type-level linked list representing a struct's fields.
-    /// `F` is the type of the first field.
-    /// `R` is the type of the list representing the remaining fields.
-    pub struct Fields<F, R>
-    where
-        R: FieldList,
-    {
-        data: PhantomData<(F, R)>,
-    }
-
-    /// The end of a type-level linked list.
-    pub struct Empty;
-
-    pub trait FieldList {}
-
-    impl<F, R> FieldList for Fields<F, R> where R: FieldList {}
-
-    impl FieldList for Empty {}
+    pub use frunk_core::hlist::{HCons as Fields, HList as FieldList, HNil as Empty};
 }
 
 /// Marker types for the padding mode of compound types.
@@ -105,7 +86,7 @@ pub mod padding {
 ///   TransmuteFrom::<&'short u8>::transmute_from(long)
 /// }
 /// ```
-/// 
+///
 /// ### Lifetime Expansion
 /// Typic cannot be used to expand lifetimes. This produces a compilation error:
 /// ```compile_fail

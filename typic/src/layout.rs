@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
-use crate::{hlist::*, padding, structure::*, transmute::Candidate, Type};
+use crate::{padding, structure::*, transmute::Candidate, Type};
 use core::mem::*;
 use core::num::*;
 use core::ops::*;
+use frunk_core::hlist::*;
 use static_assertions::*;
 use typenum::operator_aliases::Sum;
 use typenum::*;
