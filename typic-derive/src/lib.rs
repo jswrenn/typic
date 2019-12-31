@@ -69,7 +69,8 @@ pub fn repr(_args: TokenStream, input: TokenStream) -> TokenStream {
 
       impl #generics typic::Type for #name #generics {
         type Padding = typic::padding::Padded;
-        type Representation = #fields;
+        //type Representation = #fields;
+        type Representation = typic::structure::Variants<#fields, typic::structure::None>;
       }
 
     })

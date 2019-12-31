@@ -5,30 +5,40 @@ use core::mem::*;
 use core::num::*;
 use core::ops::*;
 use frunk_core::hlist::*;
+use frunk_core::coproduct::*;
 use static_assertions::*;
 use typenum::operator_aliases::Sum;
 use typenum::*;
 
-pub trait Layout: Candidate {
-    type Align: Unsigned;
-    type Slots: SlotList;
+pub trait Layout {
+    type Align;
+    type Slots;
 }
 
 impl<T> Layout for T
 where
     T: Type<Padding = padding::Padded>,
-    T::Representation: AlignmentOf + SlotsOf<<T::Representation as AlignmentOf>::Value, U0>,
+    T::Representation
+      : AlignmentOf
+      + MinimumSize
+      + SlotsOf<
+          <T::Representation as AlignmentOf>::Value,
+          U0,
+          <T::Representation as MinimumSize>::Size,
+        >,
 {
     type Align = <T::Representation as AlignmentOf>::Value;
     type Slots =
-        <T::Representation as SlotsOf<<T::Representation as AlignmentOf>::Value, U0>>::Slots;
+        <T::Representation as SlotsOf<
+          <T::Representation as AlignmentOf>::Value,
+          U0,
+          <T::Representation as MinimumSize>::Size,
+        >>::Slots;
 }
 
 pub trait AlignmentOf<Minimum = U1>
-where
-    Minimum: Unsigned,
 {
-    type Value: Unsigned;
+    type Value;
 }
 
 impl<Minimum> AlignmentOf<Minimum> for Empty
@@ -49,23 +59,18 @@ where
     type Value = Maximum<<F as Layout>::Align, <R as AlignmentOf<Minimum>>::Value>;
 }
 
-/// An item in a `Representation`.
-pub trait Slot {
-    type Size: Unsigned;
-}
-
 /// A byte of initialized memory.
 pub type Init = u8;
 
 /// A slot may be byte of initialized memory.
-impl Slot for Init {
+impl Size for Init {
     type Size = U1;
 }
 
 /// A non-zero byte of memory.
 pub type NonZero = core::num::NonZeroU8;
 
-impl Slot for NonZero {
+impl Size for NonZero {
     type Size = U1;
 }
 
@@ -73,49 +78,59 @@ impl Slot for NonZero {
 pub type Uninit = MaybeUninit<u8>;
 
 /// A slot may be a byte of possibly uninitialized memory.
-impl Slot for Uninit {
+impl Size for Uninit {
     type Size = U1;
 }
 
 /// A `Slot` may be a pointer.
-impl<'t, T> Slot for &'t T {
-    type Size = <*const T as Slot>::Size;
+impl<'t, T> Size for &'t T {
+    type Size = <*const T as Size>::Size;
 }
 
 /// A `Slot` may be a pointer.
-impl<'t, T> Slot for &'t mut T {
-    type Size = <*const T as Slot>::Size;
+impl<'t, T> Size for &'t mut T {
+    type Size = <*const T as Size>::Size;
 }
 
 /// A `Slot` may be a pointer.
-impl<T> Slot for *const T {
+impl<T> Size for *const T {
     #[cfg(target_pointer_width = "64")]
     type Size = U8;
 }
 
 /// A `Slot` may be a pointer.
-impl<T> Slot for *mut T {
-    type Size = <*const T as Slot>::Size;
+impl<T> Size for *mut T {
+    type Size = <*const T as Size>::Size;
 }
 
-pub trait SlotList: HList {
-    type Size: Unsigned;
+pub trait Size {
+    type Size;
 }
 
-/// ZSTs have a representation of `Empty`.
-impl SlotList for HNil {
+impl Size for HNil {
     type Size = U0;
 }
 
-impl<F, R: SlotList> SlotList for HCons<F, R>
+impl<H, T> Size for HCons<H, T>
 where
-    F: Slot,
-    R: SlotList,
-
-    <R as SlotList>::Size: Add<<F as Slot>::Size>,
-    Sum<<R as SlotList>::Size, <F as Slot>::Size>: Unsigned,
+  H: Size,
+  T: Size,
+  <T as Size>::Size: Add<<H as Size>::Size>,
 {
-    type Size = Sum<<R as SlotList>::Size, <F as Slot>::Size>;
+    type Size = Sum<<T as Size>::Size, <H as Size>::Size>;
+}
+
+impl Size for CNil {
+    type Size = U0;
+}
+
+impl<L, R> Size for Coproduct<L, R>
+where
+  L: Size,
+  R: Size,
+  <R as Size>::Size: Max<<L as Size>::Size>,
+{
+    type Size = Maximum<<R as Size>::Size, <L as Size>::Size>;
 }
 
 macro_rules! primitive_layout {
@@ -129,8 +144,12 @@ macro_rules! primitive_layout {
         type Value = $align;
       }
 
-      impl SlotsOf<$align, U0> for $ty {
+      impl SlotsOf<$align, U0, U0> for $ty {
         type Slots = <u8 as Repeat<$size>>::Output;
+      }
+
+      impl MinimumSize for $ty {
+        type Size = U0;
       }
 
       impl Type for $ty {
@@ -165,7 +184,11 @@ macro_rules! nonzero_layout {
         type Value = $align;
       }
 
-      impl SlotsOf<$align, U0> for $ty {
+      impl MinimumSize for $ty {
+        type Size = U0;
+      }
+
+      impl SlotsOf<$align, U0, U0> for $ty {
         #[cfg(target_endian = "little")]
         type Slots = HCons<NonZero, <Init as Repeat<Sub1<$size>>>::Output>;
       }
@@ -199,7 +222,11 @@ impl<'t, T, N: Unsigned> AlignmentOf<N> for &'t T {
     type Value = U8;
 }
 
-impl<'t, T> SlotsOf<U8, U0> for &'t T {
+impl<'t, T> MinimumSize for &'t T {
+    type Size = U0;
+}
+
+impl<'t, T> SlotsOf<U8, U0, U0> for &'t T {
     type Slots = HCons<Self, HNil>;
 }
 
@@ -216,7 +243,11 @@ impl<'t, T, N: Unsigned> AlignmentOf<N> for &'t mut T {
     type Value = U8;
 }
 
-impl<'t, T> SlotsOf<U8, U0> for &'t mut T {
+impl<'t, T> MinimumSize for &'t mut T {
+    type Size = U0;
+}
+
+impl<'t, T> SlotsOf<U8, U0, U0> for &'t mut T {
     type Slots = HCons<Self, HNil>;
 }
 
@@ -233,9 +264,13 @@ impl<T, N: Unsigned> AlignmentOf<N> for *mut T {
     type Value = U8;
 }
 
-impl<T> SlotsOf<U8, U0> for *mut T {
+impl<T> SlotsOf<U8, U0, U0> for *mut T {
     #[cfg(target_pointer_width = "64")]
     type Slots = <Init as Repeat<U8>>::Output;
+}
+
+impl<T> MinimumSize for *mut T {
+    type Size = U0;
 }
 
 impl<T> Type for *mut T {
@@ -251,7 +286,11 @@ impl<T, N: Unsigned> AlignmentOf<N> for *const T {
     type Value = U8;
 }
 
-impl<T> SlotsOf<U8, U0> for *const T {
+impl<T> MinimumSize for *const T {
+    type Size = U0;
+}
+
+impl<T> SlotsOf<U8, U0, U0> for *const T {
     #[cfg(target_pointer_width = "64")]
     type Slots = <Init as Repeat<U8>>::Output;
 }
@@ -262,12 +301,52 @@ impl<T> Type for *const T {
 }
 
 /// Apply the `repr(C)` layout algorithm to find the representation of a struct.
-pub trait SlotsOf<Alignment, Offset> {
+pub trait SlotsOf<Alignment, Offset, MinimumSize> {
     /// The representation of this struct.
-    type Slots: SlotList;
+    type Slots;
 }
 
-impl<H, T, Alignment, Offset> SlotsOf<Alignment, Offset> for Fields<H, T>
+pub trait PadVariant<Alignment, MinimumSize> {
+  type Slots;
+}
+
+
+impl<L, R, Alignment, Offset, MinimumSize> SlotsOf<Alignment, Offset, MinimumSize> for Variants<L, R>
+where
+  L: SlotsOf<
+    Alignment,
+    U0,
+    U0,
+  >,
+  R: SlotsOf<
+    Alignment,
+    U0,
+    MinimumSize,
+  >,
+{
+    type Slots =
+      Coproduct<
+        <L as SlotsOf<
+          Alignment,
+          U0,
+          U0,
+        >>::Slots,
+        <R as SlotsOf<
+          Alignment,
+          U0,
+          MinimumSize,
+        >>::Slots,
+      >;
+}
+
+impl<Alignment, Offset, MinimumSize> SlotsOf<Alignment, Offset, MinimumSize> for None
+where
+{
+    type Slots = None;
+}
+
+
+impl<H, T, Alignment, Offset, MinimumSize> SlotsOf<Alignment, Offset, MinimumSize> for Fields<H, T>
 where
     H: Layout,
     T: FieldList,
@@ -279,12 +358,12 @@ where
     Sum<
         <(<H as Layout>::Align, Offset) as Padding>::Slots,
         <H as Layout>::Slots,
-    >: SlotList,
+    >: Size,
 
     Offset: Add<<Sum<
               <(<H as Layout>::Align, Offset) as Padding>::Slots,
               <H as Layout>::Slots,
-          > as SlotList>::Size>,
+          > as Size>::Size>,
 
     T: SlotsOf<
         Alignment,
@@ -293,7 +372,8 @@ where
           <Sum<
               <(<H as Layout>::Align, Offset) as Padding>::Slots,
               <H as Layout>::Slots,
-          > as SlotList>::Size>,
+          > as Size>::Size>,
+        MinimumSize
     >,
 
     Sum<<(<H as Layout>::Align, Offset) as Padding>::Slots, <H as Layout>::Slots>: Add<
@@ -304,30 +384,10 @@ where
               <Sum<
                   <(<H as Layout>::Align, Offset) as Padding>::Slots,
                   <H as Layout>::Slots,
-              > as SlotList>::Size>,
+              > as Size>::Size>,
+            MinimumSize
         >>::Slots,
     >,
-
-    Sum<
-        // padding + `H` field repr
-        Sum<
-          // padding bytes
-          <(<H as Layout>::Align, Offset) as Padding>::Slots,
-          // `H` repr bytes
-          <H as Layout>::Slots,
-        >,
-        // repr bytes of the rest of this structure
-        <T as SlotsOf<
-            Alignment,
-            // the offset increases by (padding + `H` field repr) bytes.
-            Sum<
-              Offset,
-              <Sum<
-                  <(<H as Layout>::Align, Offset) as Padding>::Slots,
-                  <H as Layout>::Slots,
-              > as SlotList>::Size>,
-        >>::Slots>:
-    SlotList,
 {
     /// `[Uninit; offset % field.alignment] + [H repr] + [T repr]`
     type Slots =
@@ -349,17 +409,26 @@ where
               <Sum<
                   <(<H as Layout>::Align, Offset) as Padding>::Slots,
                   <H as Layout>::Slots,
-              > as SlotList>::Size>,
+              > as Size>::Size>,
+            MinimumSize
         >>::Slots,
     >;
 }
 
 /// After the last field, insert trailing padding.
-impl<Alignment, Offset> SlotsOf<Alignment, Offset> for Empty
+impl<Alignment, Offset, MinimumSize> SlotsOf<Alignment, Offset, MinimumSize> for Empty
 where
-    (Alignment, Offset): Padding,
+    Offset: Max<MinimumSize>,
+    Maximum<Offset, MinimumSize>: Sub<Offset>,
+    Uninit: Repeat<Diff<Maximum<Offset, MinimumSize>, Offset>>,
+    <Uninit as Repeat<Diff<Maximum<Offset, MinimumSize>, Offset>>>::Output:
+      Add<<(Alignment, Maximum<Offset, MinimumSize>) as Padding>::Slots>,
+    (Alignment, Maximum<Offset, MinimumSize>): Padding,
 {
-    type Slots = <(Alignment, Offset) as Padding>::Slots;
+    type Slots =
+      Sum<
+        <Uninit as Repeat<Diff<Maximum<Offset, MinimumSize>, Offset>>>::Output,
+        <(Alignment, Maximum<Offset, MinimumSize>) as Padding>::Slots>;
 }
 
 /// A padding computer for the C layout.
@@ -368,7 +437,7 @@ pub trait Padding {
     type Bytes: Unsigned;
 
     /// the hlist representation of trailing padding bytes
-    type Slots: SlotList;
+    type Slots;
 }
 
 impl<Alignment, Offset> Padding for (Alignment, Offset)
@@ -385,10 +454,8 @@ where
 
 /// Produce `N` repetitions of `Self`
 pub trait Repeat<N>
-where
-    N: Unsigned,
 {
-    type Output: SlotList;
+    type Output: Size;
 }
 
 impl<T> Repeat<UTerm> for T {
@@ -399,7 +466,7 @@ impl<T, Ul: Unsigned, Bl: Bit> Repeat<UInt<Ul, Bl>> for T
 where
     UInt<Ul, Bl>: Sub<B1>,
     Sub1<UInt<Ul, Bl>>: Unsigned,
-    HCons<T, <T as Repeat<Sub1<UInt<Ul, Bl>>>>::Output>: SlotList,
+    HCons<T, <T as Repeat<Sub1<UInt<Ul, Bl>>>>::Output>: Size,
     T: Repeat<<UInt<Ul, Bl> as Sub<B1>>::Output>,
 {
     type Output = HCons<T, <T as Repeat<Sub1<UInt<Ul, Bl>>>>::Output>;
@@ -420,7 +487,95 @@ where
     type Output = Diff<Sub1<Sum<N, Multiple>>, Mod<Sub1<Sum<N, Multiple>>, Multiple>>;
 }
 
+use frunk_core::Coprod;
+
+type Union = Coprod![u32, u32];
+
+//assert_type_eq_all!(U4, <Union as UnionSize>::Size);
+
 assert_type_eq_all!(U8, <U5 as RoundUpTo<U8>>::Output);
 assert_type_eq_all!(U0, <U0 as RoundUpTo<U8>>::Output);
 assert_type_eq_all!(U8, <U8 as RoundUpTo<U8>>::Output);
 assert_type_eq_all!(U16, <U9 as RoundUpTo<U8>>::Output);
+
+
+pub trait MaxVariantSize {
+  type Size;
+}
+
+impl MaxVariantSize for None {
+  type Size = U0;
+}
+
+impl<L, R> MaxVariantSize for Variants<L, R>
+where
+  Self: AlignmentOf,
+  L: SlotsOf<
+    <Self as AlignmentOf>::Value,
+    U0,
+    U0,
+  >,
+  <L as SlotsOf<
+    <Self as AlignmentOf>::Value,
+    U0,
+    U0,
+  >>::Slots: Size,
+  R: MaxVariantSize,
+  
+  <R as MaxVariantSize>::Size: Max<<<L as SlotsOf<
+    <Self as AlignmentOf>::Value,
+    U0,
+    U0,
+  >>::Slots as Size>::Size>
+
+{
+    type Size =
+      Maximum<
+        <R as MaxVariantSize>::Size,
+        <<L as SlotsOf<
+          <Self as AlignmentOf>::Value,
+          U0,
+          U0,
+        >>::Slots as Size>::Size
+      >;
+}
+
+use frunk_core::coproduct::*;
+
+impl<N> AlignmentOf<N> for CNil {
+  type Value = U1;
+}
+
+impl<L, R, N> AlignmentOf<N> for Coproduct<L, R>
+where
+  //R: AlignmentOf<N>,
+  //<R as AlignmentOf<N>>::Value: Max<<L as Layout>::Align>,
+{
+    type Value = U1;//Maximum<<R as AlignmentOf<N>>::Value, <L as Layout>::Align>;
+}
+
+pub trait MinimumSize
+{
+  type Size;
+}
+
+
+impl MinimumSize for Empty {
+  type Size = U0;
+}
+
+impl<H, T> MinimumSize for Fields<H, T> {
+  type Size = U0;
+}
+
+impl MinimumSize for None {
+  type Size = U0;
+}
+
+impl<L, R> MinimumSize for Variants<L, R>
+where
+  Self: MaxVariantSize + AlignmentOf,
+  <Self as MaxVariantSize>::Size: RoundUpTo<<Self as AlignmentOf>::Value>
+{
+  type Size = <<Self as MaxVariantSize>::Size as RoundUpTo<<Self as AlignmentOf>::Value>>::Output;
+}

@@ -3,7 +3,8 @@ use crate::layout::{Init, Layout, NonZero, Uninit};
 use crate::transmute::Candidate;
 use core::mem;
 use frunk_core::hlist::*;
-use frunk_core::Hlist;
+use frunk_core::coproduct::*;
+use frunk_core::{Hlist, Coprod};
 use static_assertions::*;
 
 /// A valid instance of `T` is also a valid instance of `Self`
@@ -119,7 +120,60 @@ where
 
 // U: TransmuteFrom<T> indicates that the bytes of any valid T
 // correspond to the bytes of a valid instance of U.
-pub trait FromLayout<T> {}
+#[marker] pub trait FromLayout<T> {}
+
+impl FromLayout<CNil> for CNil {}
+impl FromLayout<HNil> for CNil {}
+impl FromLayout<CNil> for HNil {}
+
+assert_impl_all!(
+  Coprod![]
+    : FromLayout<Coprod![]>
+    , FromLayout<Hlist![]>);
+
+
+//***
+assert_impl_all!(
+               Coprod![Hlist![]]
+  : FromLayout<Coprod![Hlist![]]>);
+assert_impl_all!(
+               Coprod![Hlist![]]
+  : FromLayout<Hlist![]>);
+
+//assert_impl_all!(Hlist![]: FromLayout<Hlist![]>);
+
+impl<T0, T1, TR, U, UR> FromLayout<Coprod![T0, T1, ...TR]> for Coprod![U, ...UR]
+where
+  // every T in Coprod![T, ...TR] has a valid variant in Coprod![U, ...UR]
+  Self: FromLayout<T0>,
+  Self: FromLayout<T1>,
+  Self: FromLayout<TR>,
+{}
+
+impl<T, U, UR> FromLayout<Coprod![T]> for Coprod![U, ...UR]
+where
+  // every T in Coprod![T, ...TR] has a valid variant in Coprod![U, ...UR]
+  Coprod![U, ...UR]: FromLayout<T>,
+{}
+
+assert_impl_all!(
+  Coprod![Hlist![Init], Hlist![NonZero]]
+    : FromLayout<Hlist![Init]>
+    , FromLayout<Hlist![NonZero]>);
+
+/* OVERLAPPING IMPLS START HERE */
+// (A) `T` -> `U`
+impl<T: HList, U, UR> FromLayout<T> for Coprod![U, ...UR]
+where
+  U: FromLayout<T>,
+{}
+
+// (B) `T` -> something in `UR`
+impl<T: HList, U, UR> FromLayout<T> for Coprod![U, ...UR]
+where
+  UR: FromLayout<T>,
+{}
+/* OVERLAPPING IMPLS END HERE */
 
 /// Base case.
 impl FromLayout<HNil> for HNil {}

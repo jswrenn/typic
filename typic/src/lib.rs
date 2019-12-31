@@ -1,3 +1,5 @@
+#![feature(marker_trait_attr)]
+#![feature(const_generics)]
 pub use typic_derive::repr;
 
 mod alignedto;
@@ -5,12 +7,17 @@ mod hlist;
 mod layout;
 mod transmutation;
 
+pub use layout::Layout;
+
 /// Types used to represent the structure of compound types.
+/// For internal use.
 pub mod structure {
     pub use frunk_core::hlist::{HCons as Fields, HList as FieldList, HNil as Empty};
+    pub use frunk_core::coproduct::{Coproduct as Variants, CNil as None};
 }
 
 /// Marker types for the padding mode of compound types.
+/// For internal use.
 pub mod padding {
     /// A marker indicating that a compound type is `#[repr(packed)]`
     pub struct Packed;
@@ -30,7 +37,7 @@ pub mod padding {
 ///
 /// ## Examples
 /// ### Unrestricted and Restricted Transmutations
-/// ```
+/// ```ignore
 /// use typic::{self, transmute::{Invariants, Valid, TransmuteFrom}};
 ///
 /// #[typic::repr(C)]
@@ -76,7 +83,7 @@ pub mod padding {
 /// ```
 ///
 /// ### Lifetime Contraction
-/// ```
+/// ```ignore
 /// use static_assertions::*;
 /// use typic::{self, transmute::{Invariants, Valid, TransmuteFrom}};
 ///
@@ -116,3 +123,41 @@ pub trait Type: transmute::Candidate {
     /// An abstract representation of the type's structure.
     type Representation;
 }
+
+fn foo() {
+  use frunk_core::*;
+
+  #[derive(Default)]
+  struct T<const N: usize> {
+    marker: core::marker::PhantomData<[(); N]>
+  };
+
+  type Tags = Coprod!(T<{1}>, T<{2}>, T<{3}>);
+
+  let a = Tags::inject(<T<{1}>>::default());
+  let a = Tags::inject(<T<{3}>>::default());
+  
+
+  type I32BoolF32 = Coprod!(i32, bool, f32);
+  type I32F32 = Coprod!(i32, f32);
+
+  let co1 = I32BoolF32::inject(42_f32);
+  let co2 = I32BoolF32::inject(true);
+
+  let sub1: Result<Coprod!(i32, f32), _> = co1.subset();
+  let sub2: Result<Coprod!(i32, f32), _> = co2.subset();
+  assert!(sub1.is_ok());
+  assert!(sub2.is_err());
+
+  // Turbofish syntax for specifying the target subset is also supported.
+  // The Indices parameter should be left to type inference using `_`.
+  assert!(co1.subset::<Coprod!(i32, f32), _>().is_ok());
+  assert!(co2.subset::<Coprod!(i32, f32), _>().is_err());
+
+  // Order doesn't matter.
+  assert!(co1.subset::<Coprod!(f32, i32), _>().is_ok());
+}
+
+//frunk_core::coproduct::Coproduct<frunk_core::hlist::HCons<u8, frunk_core::hlist::HNil>, frunk_core::coproduct::CNil>
+
+
