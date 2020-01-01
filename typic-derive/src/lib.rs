@@ -33,9 +33,11 @@ fn candidate(definition: &syn::ItemStruct) -> Option<syn::ItemStruct> {
 }
 
 #[proc_macro_attribute]
-pub fn repr(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let definition: syn::ItemStruct = parse_macro_input!(input);
+pub fn typicrepr(_args: TokenStream, input: TokenStream) -> TokenStream {
+    repr(_args, input)
+}
 
+fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
     let name = &definition.ident;
     let generics = definition.generics.clone();
 
@@ -44,8 +46,8 @@ pub fn repr(_args: TokenStream, input: TokenStream) -> TokenStream {
         .iter()
         .map(|field| field.ty.clone())
         .rfold(
-            quote! {typic::structure::Empty},
-            |rest, field| quote! {typic::structure::Fields<#field, #rest>},
+            quote! {typic::hir::product::Nil},
+            |rest, field| quote! {typic::hir::product::Cons<#field, #rest>},
         );
 
     let candidate = candidate(&definition);
@@ -63,16 +65,58 @@ pub fn repr(_args: TokenStream, input: TokenStream) -> TokenStream {
       #[doc(hidden)]
       #candidate
 
-      impl #generics typic::transmute::Candidate for #name #generics {
+      impl #generics typic::hir::Candidate for #name #generics {
         type Candidate = #candidate_name #generics;
       }
 
-      impl #generics typic::Type for #name #generics {
-        type Padding = typic::padding::Padded;
-        //type Representation = #fields;
-        type Representation = typic::structure::Variants<#fields, typic::structure::None>;
+      impl #generics typic::hir::Type for #name #generics {
+        type Padding = typic::hir::padding::Padded;
+        type Representation = #fields;
+        //type Representation = typic::hir::product::Cons<#fields, typic::hir::product>;
       }
 
     })
     .into()
+}
+
+fn impl_union(definition: syn::ItemUnion) -> TokenStream {
+    let name = &definition.ident;
+    let generics = definition.generics.clone();
+
+    let mut iter = definition.fields.named.iter().map(|field| field.ty.clone());
+
+    let fields = if let Some(first) = iter.next() {
+        iter.rfold(
+            quote! {typic::hir::coproduct::Nil<#first>},
+            |rest, field| quote! {typic::hir::coproduct::Cons<#field, #rest>},
+        )
+    } else {
+        unimplemented!()
+    };
+
+    (quote! {
+      #[repr(C)]
+      #definition
+
+      impl #generics typic::hir::Candidate for #name #generics {
+        type Candidate = Self;
+      }
+
+      impl #generics typic::hir::Type for #name #generics {
+        type Padding = typic::hir::padding::Padded;
+        type Representation = #fields;
+      }
+    })
+    .into()
+}
+
+#[proc_macro_attribute]
+pub fn repr(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let definition: syn::Item = parse_macro_input!(input);
+
+    match definition {
+        syn::Item::Struct(definition) => impl_struct(definition),
+        syn::Item::Union(definition) => impl_union(definition),
+        _ => unimplemented!(),
+    }
 }

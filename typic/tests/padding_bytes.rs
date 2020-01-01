@@ -1,5 +1,5 @@
 use static_assertions::*;
-use typic::{self, transmute::TransmuteFrom};
+use typic::{self, TransmuteFrom};
 
 // This struct has no padding bytes.
 #[typic::repr(C)]

@@ -1,163 +1,160 @@
 #![feature(marker_trait_attr)]
-#![feature(const_generics)]
+
+use static_assertions::*;
 pub use typic_derive::repr;
 
-mod alignedto;
-mod hlist;
-mod layout;
-mod transmutation;
+pub mod hir;
+pub mod hir_into_mir;
+pub mod mir;
+pub mod mir_convert;
 
-pub use layout::Layout;
+/// A valid instance of `T` is also a valid instance of `Self`
+pub unsafe trait TransmuteFrom<T> {
+    /// Unsafe conversion from `T` to `U`.
+    ///
+    /// Construct an instance of `Self` from `T`, **without** ensuring that
+    /// user-defined layout invariants of `T` are satisfied. This conversion
+    /// **will** ensure that compiler-defined layout invariants are satisfied.
+    ///
+    /// It is not undefined behavior to use this function to construct
+    /// instances of `Self` when `Self` has user-defined layout invariants on
+    /// its members, but subsequently invoking procedures on `Self` that expect
+    /// those layout variants to be satisfied may introduce undefined behavior.
+    unsafe fn transmute_from_unchecked(from: T) -> Self
+    where
+        Self: Sized;
 
-/// Types used to represent the structure of compound types.
-/// For internal use.
-pub mod structure {
-    pub use frunk_core::hlist::{HCons as Fields, HList as FieldList, HNil as Empty};
-    pub use frunk_core::coproduct::{Coproduct as Variants, CNil as None};
+    /// Safe, infallible conversion from `T` to `U`.
+    ///
+    /// Construct an instance of `Self` from `T`, ensuring that both compiler-
+    /// defined and user-defined layout invariants are satisfied.
+    // -------------------------------------------------------------------------
+    // This member is `inline(always)`, as it should be a zero-cost, safe
+    // abstraction over `transmute_from_unchecked`.
+    #[inline(always)]
+    fn transmute_from(from: T) -> Self
+    where
+        Self: hir::Candidate<Candidate = Self> + Sized,
+    {
+        unsafe { Self::transmute_from_unchecked(from) }
+    }
+
+    /// Safe, fallible conversion from `T` to `U`.
+    ///
+    /// Construct an instance of `Self` from `T`, ensuring that user-defined
+    /// layout invariants of `T` are satisfied.
+    // -------------------------------------------------------------------------
+    // This is implemented as a member of `TransmuteFrom` because end-users cannot
+    // write implementations of `TransmuteFrom`—it has a blanket implementation.
+    // This member becomes available upon a user's implementation of
+    // `Invariants`, in which they implement `check`.
+    fn try_transmute_from(from: T) -> Result<Self, <Self as Invariants>::Error>
+    where
+        Self: Invariants + Sized;
 }
 
-/// Marker types for the padding mode of compound types.
-/// For internal use.
-pub mod padding {
-    /// A marker indicating that a compound type is `#[repr(packed)]`
-    pub struct Packed;
+/// A result type for indicating conversions that are valid.
+pub struct Valid;
 
-    /// A marker indicating that a compound type is not `#[repr(packed)]`.
-    pub struct Padded;
+/// A trait indicating that instances of a type `T` are bit-valid instances of a
+/// type `U`, **if they satisfy the invariants of `check`**.
+pub unsafe trait Invariants: hir::Candidate {
+    /// The type returned in the event of a conversion error.
+    type Error;
 
-    /// A trait defining the set of possible padding modes.
-    pub trait Padding {}
-
-    impl Padding for Packed {}
-
-    impl Padding for Padded {}
+    /// Produces `Valid` if `&to` is a valid instance of `Self`, otherwise
+    /// produces `Error`.
+    fn check(to: &Self::Candidate) -> Result<Valid, Self::Error>
+    where
+        Self: Sized;
 }
 
-/// Types for safe transmutation.
-///
-/// ## Examples
-/// ### Unrestricted and Restricted Transmutations
-/// ```ignore
-/// use typic::{self, transmute::{Invariants, Valid, TransmuteFrom}};
-///
-/// #[typic::repr(C)]
-/// #[derive(Default)]
-/// struct Struct1 {
-///   a: u16,
-///   b: u16,
-/// }
-///
-/// // If all fields are public, it is assumed that there are no additional
-/// // invariants placed on the fields beyond what they individually have.
-/// #[typic::repr(C)]
-/// #[derive(Default)]
-/// struct Struct2 {
-///   pub a: u16,
-///   pub b: u8,
-///   pub c: u8,
-/// }
-///
-/// // We can transmute safely and without checks from `Struct1` to `Struct2`.
-/// let _ = Struct2::transmute_from(Struct1::default());
-///
-/// // Let's place some invariants on `Struct`.
-/// unsafe impl Invariants for Struct1 {
-///     type Error = &'static str;
-///
-///     #[inline(always)]
-///     fn check(candidate: &Self::Candidate) -> Result<Valid, Self::Error>
-///     where
-///         Self: Sized,
-///     {
-///         if candidate.a % 2 == 0 {
-///           Ok(Valid)
-///         } else {
-///           Err("`a` must be even")
-///         }
-///     }
-/// }
-///
-/// // Now let's try to go in the other direction:
-/// assert!(Struct1::try_transmute_from(Struct2 {a: 0, b: 0, c: 0}).is_ok());
-/// assert!(Struct1::try_transmute_from(Struct2 {a: 1, b: 0, c: 0}).is_err());
-/// ```
-///
-/// ### Lifetime Contraction
-/// ```ignore
-/// use static_assertions::*;
-/// use typic::{self, transmute::{Invariants, Valid, TransmuteFrom}};
-///
-/// fn contract<'long, 'short>(long: &'long u8) -> &'short u8
-/// where 'long: 'short
-/// {
-///   TransmuteFrom::<&'short u8>::transmute_from(long)
-/// }
-/// ```
-///
-/// ### Lifetime Expansion
-/// Typic cannot be used to expand lifetimes. This produces a compilation error:
-/// ```compile_fail
-/// use static_assertions::*;
-/// use typic::{self, transmute::{Invariants, Valid, TransmuteFrom}};
-///
-/// fn expand<'short>(short: &'short u8) -> &'static u8
-/// {
-///   <&'static u8 as TransmuteFrom::<&'short u8>>::transmute_from(short)
-/// }
-/// ```
-pub mod transmute {
-    pub use crate::transmutation::{Invariants, TransmuteFrom, Valid};
+/// A type has no invariants if its candidate type is equal to `Self`.
+unsafe impl<U> Invariants for U
+where
+    U: hir::Candidate<Candidate = Self>,
+{
+    /// If a type `U` is `Arbitrary`, then conversions of `T` to `U` are
+    /// infallible.
+    type Error = core::convert::Infallible;
 
-    /// A candidate of a type is a doppelganger sharing that type's structure, but
-    /// not its methods or invariants.
-    pub trait Candidate {
-        type Candidate;
+    /// If a type `U` is `Arbitrary`, then conversions of `T` to `U` are
+    /// infallible. Therefore, this _always_ produces `Ok(Valid)`.
+    // ------------------------------------------------------------------------
+    // This member is `inline(always)`, as it should be a no-op.
+    #[inline(always)]
+    fn check(_: &Self::Candidate) -> Result<Valid, Self::Error>
+    where
+        Self: Sized,
+    {
+        Ok(Valid)
     }
 }
 
-/// A generic representation of a type.
-pub trait Type: transmute::Candidate {
-    /// The padding mode of the type.
-    type Padding: padding::Padding;
+/// Implement `TransmuteFrom<T>` for `U`, for layout-compatible `T` and `U`.
+unsafe impl<T, U> TransmuteFrom<T> for U
+where
+    T: hir_into_mir::Layout,
+    U: hir_into_mir::Layout,
+    <U as hir_into_mir::Layout>::Representation:
+        mir_convert::FromLayout<<T as hir_into_mir::Layout>::Representation>,
+{
+    #[inline(always)]
+    unsafe fn transmute_from_unchecked(from: T) -> Self
+    where
+        Self: Sized,
+    {
+        let to = core::mem::transmute_copy(&from);
+        core::mem::forget(from);
+        to
+    }
 
-    /// An abstract representation of the type's structure.
-    type Representation;
+    #[inline(always)]
+    fn try_transmute_from(from: T) -> Result<Self, <Self as Invariants>::Error>
+    where
+        Self: Invariants + Sized,
+    {
+        // Construct a candidate of `U`.
+        let to = unsafe { core::mem::transmute::<&T, &<U as hir::Candidate>::Candidate>(&from) };
+        Self::check(to).map(|Valid| unsafe { Self::transmute_from_unchecked(from) })
+    }
 }
 
-fn foo() {
-  use frunk_core::*;
+mod test {
+    pub use static_assertions::*;
+    pub use typenum::*;
+    pub use typic_derive::typicrepr;
 
-  #[derive(Default)]
-  struct T<const N: usize> {
-    marker: core::marker::PhantomData<[(); N]>
-  };
+    pub mod typic {
+        pub use crate::*;
+    }
 
-  type Tags = Coprod!(T<{1}>, T<{2}>, T<{3}>);
+    #[typicrepr(C)]
+    union Test {
+        a: u8,
+    }
 
-  let a = Tags::inject(<T<{1}>>::default());
-  let a = Tags::inject(<T<{3}>>::default());
-  
-
-  type I32BoolF32 = Coprod!(i32, bool, f32);
-  type I32F32 = Coprod!(i32, f32);
-
-  let co1 = I32BoolF32::inject(42_f32);
-  let co2 = I32BoolF32::inject(true);
-
-  let sub1: Result<Coprod!(i32, f32), _> = co1.subset();
-  let sub2: Result<Coprod!(i32, f32), _> = co2.subset();
-  assert!(sub1.is_ok());
-  assert!(sub2.is_err());
-
-  // Turbofish syntax for specifying the target subset is also supported.
-  // The Indices parameter should be left to type inference using `_`.
-  assert!(co1.subset::<Coprod!(i32, f32), _>().is_ok());
-  assert!(co2.subset::<Coprod!(i32, f32), _>().is_err());
-
-  // Order doesn't matter.
-  assert!(co1.subset::<Coprod!(f32, i32), _>().is_ok());
+    assert_impl_all!(Test: crate::hir_into_mir::Layout);
 }
 
-//frunk_core::coproduct::Coproduct<frunk_core::hlist::HCons<u8, frunk_core::hlist::HNil>, frunk_core::coproduct::CNil>
-
-
+//impl hir::Type for Test {
+//  type Padding = hir::padding::Padded;
+//
+//  type Representation =
+//    hir::coproduct::Cons<
+//      i8,
+//      hir::coproduct::Nil,
+//    >;
+//}
+//
+//
+//
+//assert_impl_all!(Foo: TransmuteFrom<Bar>);
+//
+//
+////assert_impl_all!(Test: TransmuteFrom<Bar>);
+//assert_impl_all!(Test: TransmuteFrom<Test>);
+//assert_impl_all!(Test: TransmuteFrom<Bar>);
+//assert_impl_all!(Bar: TransmuteFrom<Test>);
+//
+//

@@ -1,5 +1,5 @@
 use static_assertions::*;
-use typic::{self, transmute::Invariants};
+use typic::{self, Invariants};
 
 // This struct is not transparent, because `b` is private.
 #[typic::repr(C)]

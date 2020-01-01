@@ -1,8 +1,5 @@
 use static_assertions::*;
-use typic::{
-    self,
-    transmute::{Invariants, TransmuteFrom, Valid},
-};
+use typic::{self, Invariants, TransmuteFrom, Valid};
 
 #[typic::repr(C)]
 struct Align1(u8, u8);

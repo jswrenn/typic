@@ -1,6 +1,6 @@
 use static_assertions::*;
 use std::mem;
-use typic::{self, transmute::TransmuteFrom};
+use typic::{self, TransmuteFrom};
 
 #[typic::repr(C)]
 #[derive(Default)]
