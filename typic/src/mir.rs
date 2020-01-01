@@ -167,3 +167,38 @@ where
         unimplemented!()
     }
 }
+
+impl<S, const T: &'static [u8]> Representation for crate::hir::Discriminant<S, { T }> {}
+
+impl<S: crate::hir_into_mir::Layout, const T: &'static [u8]> Size
+    for crate::hir::Discriminant<S, { T }>
+where
+    <S as crate::hir_into_mir::Layout>::Representation: Size,
+{
+    type Size = <<S as crate::hir_into_mir::Layout>::Representation as Size>::Size;
+}
+
+impl<S: crate::hir_into_mir::Layout, MinAlign, const T: &'static [u8]>
+    crate::hir_into_mir::Align<MinAlign> for crate::hir::Discriminant<S, { T }>
+where
+    <S as crate::hir_into_mir::Layout>::Representation: Size,
+{
+    type Output = <<S as crate::hir_into_mir::Layout>::Representation as Size>::Size;
+}
+
+impl<S, MinAlign, const T: &'static [u8]> crate::hir_into_mir::MinSize<MinAlign>
+    for crate::hir::Discriminant<S, { T }>
+{
+    type Output = U1;
+}
+
+impl<S, MinAlign, MinSize, Offset, const T: &'static [u8]>
+    crate::hir_into_mir::IntoMIR<MinAlign, MinSize, Offset> for crate::hir::Discriminant<S, { T }>
+where
+    MinAlign: Unsigned,
+    MinSize: Unsigned,
+    Offset: Unsigned,
+    S: crate::hir_into_mir::Layout,
+{
+    type Output = product::Cons<Self, product::Nil>;
+}

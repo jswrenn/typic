@@ -1,7 +1,9 @@
 extern crate proc_macro;
 
+use if_chain::*;
 use proc_macro::TokenStream;
-use quote::quote;
+use proc_macro2::TokenStream as TokenStream2;
+use quote::*;
 use syn;
 use syn::parse_macro_input;
 
@@ -38,6 +40,7 @@ pub fn typicrepr(_args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
+
     let name = &definition.ident;
     let generics = definition.generics.clone();
 
@@ -72,7 +75,6 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
       impl #generics typic::hir::Type for #name #generics {
         type Padding = typic::hir::padding::Padded;
         type Representation = #fields;
-        //type Representation = typic::hir::product::Cons<#fields, typic::hir::product>;
       }
 
     })
@@ -110,13 +112,118 @@ fn impl_union(definition: syn::ItemUnion) -> TokenStream {
     .into()
 }
 
+fn enum_repr(args: syn::AttributeArgs) -> (TokenStream2, String) {
+  let explicit =
+    args.into_iter()
+      .find_map(|arg|
+          if_chain! {
+            if let syn::NestedMeta::Meta(meta) = arg;
+            if let syn::Meta::Path(path) = meta;
+            if let Some(ident) = path.get_ident();
+            then {
+              let ident = ident.clone();
+              let name = ident.to_string();
+              match name.as_str() {
+                "u8" | "u16" | "u32" | "u64" | "u128" | "usize" |
+                "i8" | "i16" | "i32" | "i64" | "i128" | "isize"
+                 => Some((ident, name)),
+                _=> None
+              }
+            } else {
+              None
+            }
+          }
+        );
+  if let Some((repr, string)) = explicit {
+    (quote!{#repr}, string)
+  } else {
+    (quote!{isize}, "USIZE".to_string())
+  }
+}
+
+fn impl_enum(args: TokenStream, definition: syn::ItemEnum) -> TokenStream {
+    let args_clone : TokenStream2 = args.clone().into();
+    let args: syn::AttributeArgs = parse_macro_input!(args);
+    let (repr, repr_string) = enum_repr(args);
+
+    let name = &definition.ident;
+    let generics = definition.generics.clone();
+    
+
+    let variant_types: Vec<_> =
+      definition.variants.iter().map(|variant| variant.clone())
+      .map(|mut variant|
+        {
+          let name = name.clone();
+          let repr = repr.clone();
+          let size = format_ident!("u{}", repr_string[1..]);
+          let variant_name = variant.ident.clone();
+
+          variant.discriminant = None;
+
+          quote! {
+            pub struct #variant ;
+
+            const _ : &'static [u8] = &( <super::#name>:: #variant_name as #repr ).to_ne_bytes();
+
+            impl crate::typic::hir::Type for #variant_name {
+              type Padding = crate::typic::hir::padding::Padded;
+              type Representation =
+                crate::typic::hir::product::Cons<
+                  crate::typic::hir::Discriminant<#size, {&( <super::#name>:: #variant_name as #repr ).to_ne_bytes()}>,
+                  crate::typic::hir::product::Nil>;
+            }
+          }
+        }
+      )
+      .collect();
+
+    
+    let mut representation = definition.variants.iter().map(|variant| variant.ident.clone());
+
+    let module_name = format_ident!("typic_{}_desugar", name);
+
+    let representation =
+      if let Some(name) = representation.next() {
+        representation.rfold(
+            quote! {typic::hir::coproduct::Nil<#module_name::#name>},
+            |rest, name|
+              quote! {typic::hir::coproduct::Cons<#module_name::#name, #rest>}
+        )
+      } else {
+        quote!{ typic::hir::Uninhabited; }
+      };
+
+    let f : TokenStream = (quote! {
+      #[repr( #args_clone )]
+      #definition
+
+      impl #generics typic::hir::Candidate for #name #generics {
+        type Candidate = Self; // TODO
+      }
+      
+      mod #module_name {
+        #(#variant_types)*
+      }
+
+      impl #generics typic::hir::Type for #name #generics {
+        type Padding = typic::hir::padding::Padded;
+        type Representation = #representation;
+      }
+    })
+    .into();
+    println!("{}", f.to_string());
+    return f;
+}
+
 #[proc_macro_attribute]
-pub fn repr(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn repr(args: TokenStream, input: TokenStream) -> TokenStream {
     let definition: syn::Item = parse_macro_input!(input);
 
     match definition {
         syn::Item::Struct(definition) => impl_struct(definition),
         syn::Item::Union(definition) => impl_union(definition),
+        syn::Item::Enum(definition) => impl_enum(args, definition),
         _ => unimplemented!(),
     }
 }

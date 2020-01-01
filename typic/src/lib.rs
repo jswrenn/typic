@@ -1,4 +1,7 @@
+// needed for unions
 #![feature(marker_trait_attr)]
+// needed for enums
+#![feature(const_generics, const_int_conversion)]
 
 use static_assertions::*;
 pub use typic_derive::repr;
@@ -120,6 +123,10 @@ where
     }
 }
 
+pub mod typic {
+    pub use crate::*;
+}
+
 mod test {
     pub use static_assertions::*;
     pub use typenum::*;
@@ -129,32 +136,30 @@ mod test {
         pub use crate::*;
     }
 
-    #[typicrepr(C)]
-    union Test {
-        a: u8,
+    #[typicrepr(C, u8)]
+    enum Foo {
+        A,
     }
 
-    assert_impl_all!(Test: crate::hir_into_mir::Layout);
+    #[typicrepr(C, u8)]
+    enum Bar {
+        A,
+    }
+
+    assert_impl_all!(Foo: typic::TransmuteFrom<Bar>);
+}
+/*
+enum Foo {
+  Bar = 1,
 }
 
-//impl hir::Type for Test {
-//  type Padding = hir::padding::Padded;
-//
-//  type Representation =
-//    hir::coproduct::Cons<
-//      i8,
-//      hir::coproduct::Nil,
-//    >;
-//}
-//
-//
-//
-//assert_impl_all!(Foo: TransmuteFrom<Bar>);
-//
-//
-////assert_impl_all!(Test: TransmuteFrom<Bar>);
-//assert_impl_all!(Test: TransmuteFrom<Test>);
-//assert_impl_all!(Test: TransmuteFrom<Bar>);
-//assert_impl_all!(Bar: TransmuteFrom<Test>);
-//
-//
+enum Bar {
+  Baz = 1,
+}
+
+type T = hir::product::Cons<hir::Discriminant<{&(Foo::Bar as u16).to_ne_bytes()}>, hir::product::Nil>;
+type U = hir::product::Cons<hir::Discriminant<{&(Bar::Baz as u16).to_ne_bytes()}>, hir::product::Nil>;
+
+assert_type_eq_all!(T, U);
+
+*/

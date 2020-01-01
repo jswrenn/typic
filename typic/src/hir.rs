@@ -2,6 +2,15 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ops::Add;
 
+pub struct Discriminant<S, const T: &'static [u8]>(PhantomData<S>);
+
+impl<S, const T: &'static [u8]> Representation for Discriminant<S, { T }> {}
+
+impl<S, const T: &'static [u8]> Type for Discriminant<S, { T }> {
+    type Padding = padding::Padded;
+    type Representation = Self;
+}
+
 pub mod padding {
     /// A marker indicating that a compound type is `#[repr(packed)]`
     pub struct Packed;
@@ -31,6 +40,9 @@ pub trait Candidate {
 }
 
 pub trait Representation {}
+
+pub enum Uninhabited {}
+impl Representation for Uninhabited {}
 
 pub mod product {
     use core::marker::PhantomData;

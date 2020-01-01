@@ -11,9 +11,10 @@ description = "Type-safe transmutations between layout-compatible types."
 proc-macro = true
 
 [dependencies]
+if_chain ="*"
 proc-macro2 = "1.0"
 quote = "1.0"
 
 [dependencies.syn]
 version = "1.0"
-features = ["full"]
+features = ["full", "extra-traits"]

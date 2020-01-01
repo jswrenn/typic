@@ -1,4 +1,5 @@
 use crate::hir::Candidate;
+use crate::hir::Discriminant;
 use crate::hir_into_mir::Layout;
 use crate::mir::*;
 
@@ -40,6 +41,19 @@ where
 // correspond to the bytes of a valid instance of U.
 #[marker]
 pub trait FromLayout<T> {}
+
+// discriminant casting
+impl<S, TR, UR, const V: &'static [u8]> FromLayout<Hlist![Discriminant<S, {V}>, ...TR]> for Hlist![Discriminant<S, {V}>, ...UR]
+where
+    TR: product::Product,
+    UR: product::Product,
+    UR: FromLayout<TR>,
+{
+}
+
+// todo: add more impls for converting disrs with non disrs
+
+// end of discriminants
 
 // every T in Coprod![T, ...TR] has a valid variant in Coprod![U, ...UR]
 impl<T, TR, U, UR> FromLayout<Coprod![T, ...TR]> for Coprod![U, ...UR]
@@ -102,7 +116,6 @@ where
 {
 }
 /* OVERLAPPING IMPLS END HERE */
-
 
 // Every variant of Coprod![T, ...TR] must be a valid instance of Self
 impl<T, U, UR> FromLayout<Coprod![T]> for Hlist![U, ...UR]
