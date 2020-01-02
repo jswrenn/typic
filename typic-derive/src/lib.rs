@@ -148,12 +148,40 @@ fn impl_enum(args: TokenStream, definition: syn::ItemEnum) -> TokenStream {
 
     let name = &definition.ident;
     let generics = definition.generics.clone();
-    
+
+
+    let mut variant_disrs: Vec<_> = definition.variants.iter()
+      .map(|variant| variant.discriminant.clone().map(|d| d.1)).collect();
+
+    {
+      let mut disr_iter = variant_disrs.iter_mut();
+
+      let mut last_disr = None;
+
+      if let Some(first) = disr_iter.next() {
+        if let None = first {
+          let disr = quote!{0}.into();
+          let disr : syn::Expr = parse_macro_input!(disr);
+          *first = Some(disr);
+        }
+        last_disr = first.clone();
+      }
+
+      for disr in disr_iter {
+        if let None = disr {
+          let last_disr = last_disr.clone().unwrap();
+          let new_disr = quote!{(#last_disr) + 1}.into();
+          let new_disr : syn::Expr = parse_macro_input!(new_disr);
+          *disr = Some(new_disr);
+        }
+      }
+    }
 
     let variant_types: Vec<_> =
-      definition.variants.iter().map(|variant| variant.clone())
-      .map(|mut variant|
+      definition.variants.iter().map(|variant| variant.clone()).zip(variant_disrs)
+      .map(|(mut variant, disr)|
         {
+          let disr = disr.unwrap();
           let name = name.clone();
           let repr = repr.clone();
           let size = format_ident!("u{}", repr_string[1..]);
@@ -164,13 +192,11 @@ fn impl_enum(args: TokenStream, definition: syn::ItemEnum) -> TokenStream {
           quote! {
             pub struct #variant ;
 
-            const _ : &'static [u8] = &( <super::#name>:: #variant_name as #repr ).to_ne_bytes();
-
             impl crate::typic::hir::Type for #variant_name {
               type Padding = crate::typic::hir::padding::Padded;
               type Representation =
                 crate::typic::hir::product::Cons<
-                  crate::typic::hir::Discriminant<#size, {&( <super::#name>:: #variant_name as #repr ).to_ne_bytes()}>,
+                  crate::typic::hir::Discriminant<#size, {&#repr::to_ne_bytes(#disr)}>,
                   crate::typic::hir::product::Nil>;
             }
           }
