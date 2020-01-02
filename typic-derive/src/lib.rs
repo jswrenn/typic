@@ -137,7 +137,7 @@ fn enum_repr(args: syn::AttributeArgs) -> (TokenStream2, String) {
   if let Some((repr, string)) = explicit {
     (quote!{#repr}, string)
   } else {
-    (quote!{isize}, "USIZE".to_string())
+    (quote!{isize}, "usize".to_string())
   }
 }
 
