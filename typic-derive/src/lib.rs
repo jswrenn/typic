@@ -7,6 +7,8 @@ use quote::*;
 use syn;
 use syn::parse_macro_input;
 
+mod synstructure;
+
 fn candidate(definition: &syn::ItemStruct) -> Option<syn::ItemStruct> {
     use syn::{Ident, Visibility};
 
@@ -149,7 +151,6 @@ fn impl_enum(args: TokenStream, definition: syn::ItemEnum) -> TokenStream {
     let name = &definition.ident;
     let generics = definition.generics.clone();
 
-
     let mut variant_disrs: Vec<_> = definition.variants.iter()
       .map(|variant| variant.discriminant.clone().map(|d| d.1)).collect();
 
@@ -186,13 +187,14 @@ fn impl_enum(args: TokenStream, definition: syn::ItemEnum) -> TokenStream {
           let repr = repr.clone();
           let size = format_ident!("u{}", repr_string[1..]);
           let variant_name = variant.ident.clone();
+          let variant_generics = synstructure::get_ty_params(variant.fields.iter(), &generics);
 
-          variant.discriminant = None;
+          let syn::Variant {ident, fields, ..} = variant;
 
           quote! {
-            pub struct #variant ;
+            pub struct #ident <#(#variant_generics,)*> #fields ;
 
-            impl crate::typic::hir::Type for #variant_name {
+            impl<#(#variant_generics,)*> crate::typic::hir::Type for #ident<#(#variant_generics,)*> {
               type Padding = crate::typic::hir::padding::Padded;
               type Representation =
                 crate::typic::hir::product::Cons<
@@ -205,16 +207,21 @@ fn impl_enum(args: TokenStream, definition: syn::ItemEnum) -> TokenStream {
       .collect();
 
     
-    let mut representation = definition.variants.iter().map(|variant| variant.ident.clone());
+    let mut representation = definition.variants.iter();
 
     let module_name = format_ident!("typic_{}_desugar", name);
 
     let representation =
-      if let Some(name) = representation.next() {
+      if let Some(variant) = representation.next() {
+        let name = &variant.ident;
+        let variant_generics = synstructure::get_ty_params(variant.fields.iter(), &generics);
         representation.rfold(
-            quote! {typic::hir::coproduct::Nil<#module_name::#name>},
-            |rest, name|
-              quote! {typic::hir::coproduct::Cons<#module_name::#name, #rest>}
+            quote! {typic::hir::coproduct::Nil<#module_name::#name<#(#variant_generics,)*>>},
+            |rest, variant| {
+              let name = &variant.ident;
+              let variant_generics = synstructure::get_ty_params(variant.fields.iter(), &generics);
+              quote! {typic::hir::coproduct::Cons<#module_name::#name <#(#variant_generics,)*>, #rest>}
+            }
         )
       } else {
         quote!{ typic::hir::Uninhabited; }

@@ -28,3 +28,9 @@ assert_impl_all!(Bar: TransmuteFrom<Foo>);
 assert_not_impl_any!(Foo: TransmuteFrom<Baz>);
 assert_not_impl_any!(Bar: TransmuteFrom<Baz>);
 
+#[typic::repr(C)]
+enum Generic<T> {
+  A(T)
+}
+
+assert_impl_all!(Generic<u8>: TransmuteFrom<Generic<u8>>);
