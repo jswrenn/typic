@@ -1,0 +1,16 @@
+[package]
+name = "typic"
+version = "0.1.0"
+authors = ["Jack Wrenn <me@jswrenn.com>"]
+edition = "2018"
+license = "MIT"
+repository = "https://github.com/jswrenn/typic"
+description = "Type-safe transmutations between layout-compatible types."
+
+[dependencies]
+static_assertions = "1.1.0"
+typenum = "1.10.0"
+typic-derive = { version = "0.1.0", path = "../typic-derive" }
+
+[dev-dependencies]
+static_assertions = "1.1.0"
