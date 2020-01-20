@@ -14,18 +14,12 @@ where
     type Output = typenum::Diff<LHS, Minimum<LHS, RHS>>;
 }
 
-pub trait RoundUpTo<Multiple>
-where
-    Multiple: Unsigned,
-{
+pub trait RoundUpTo<Multiple> {
     type Output: Unsigned;
 }
 
 impl<N, Multiple> RoundUpTo<Multiple> for N
 where
-    N: Unsigned,
-    Multiple: Unsigned,
-
     N: Add<Multiple>,
     Sum<N, Multiple>: Sub<B1>,
     Sub1<Sum<N, Multiple>>: Rem<Multiple>,
