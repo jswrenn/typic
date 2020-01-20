@@ -1,10 +1,7 @@
 //! Type-level numbers.
 
 pub use core::ops::*;
-pub use typenum::*;
-
-pub trait NonZero {}
-impl<A, B> NonZero for UInt<A, B> {}
+pub use typenum::{self, consts::*, operator_aliases::*, type_operators::*, uint::*, Unsigned};
 
 pub trait SaturatingSub<RHS> {
     type Output;
