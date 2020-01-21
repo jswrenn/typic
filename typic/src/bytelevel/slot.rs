@@ -3,3 +3,5 @@ pub mod reference;
 
 pub use bytes::Bytes;
 pub use reference::{SharedRef, UniqueRef};
+
+pub type PaddingSlot<S> = Bytes<bytes::kind::Uninitialized, S>;

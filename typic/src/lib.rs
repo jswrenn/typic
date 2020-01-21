@@ -1,5 +1,7 @@
 pub use typic_derive::repr;
 
+pub enum TODO {}
+
 pub mod bytelevel;
 pub mod highlevel;
 pub mod layout;
