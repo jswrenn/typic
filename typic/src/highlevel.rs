@@ -8,9 +8,11 @@ pub use product::{Cons as PCons, Nil as PNil};
 
 pub trait Type {
     /// `align(N)`
+    // TODO: Rename to `ReprAlign`.
     type Align;
 
     /// `packed(N)`
+    // TODO: Rename to `ReprPacked`.
     type Packed;
 
     /// An abstract representation of the type's structure.
