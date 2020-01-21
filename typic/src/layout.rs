@@ -6,9 +6,15 @@ pub mod padding;
 pub use into_bytelevel::IntoByteLevel;
 pub use padding::PaddingNeededForField;
 
+/// The actual memory layout characteristics of `Self`.
 pub trait Layout {
+    /// The actual alignment of `Self`.
     type Align;
+
+    /// The actual size of `Self`.
     type Size;
+
+    /// The byte-level representation of `Self`.
     type ByteLevel;
 }
 
