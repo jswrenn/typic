@@ -3,7 +3,7 @@ name = "typic"
 version = "0.1.0"
 authors = ["Jack Wrenn <me@jswrenn.com>"]
 edition = "2018"
-license = "MIT"
+license = "MIT/Apache-2.0"
 repository = "https://github.com/jswrenn/typic"
 description = "Type-safe transmutations between layout-compatible types."
 
