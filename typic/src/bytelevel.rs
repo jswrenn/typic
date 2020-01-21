@@ -5,4 +5,5 @@ pub mod ops;
 pub mod product;
 pub mod slot;
 
+pub use ops::{Add, Sum};
 pub use product::{Cons as PCons, Nil as PNil};

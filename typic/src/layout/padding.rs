@@ -5,11 +5,11 @@ use crate::num::*;
 /// compound type, where `Offset` is the index of the byte following the end of
 /// the preceeding field, and `Packed` is an unsigned integer reflecting the
 /// minimum packing of the enclosing type.
-pub trait PaddingNeededFor<Offset, Packed = <Self as Layout>::Align> {
+pub trait PaddingNeededForField<Offset, Packed = <Self as Layout>::Align> {
     type Output;
 }
 
-impl<Offset, Packed, T> PaddingNeededFor<Offset, Packed> for T
+impl<Offset, Packed, T> PaddingNeededForField<Offset, Packed> for T
 where
     T: Layout,
     <T as Layout>::Align: Min<Packed>,
