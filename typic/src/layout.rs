@@ -1,4 +1,4 @@
-use crate::highlevel::{Type, HighLevelOf, ReprAlignOf, ReprPackedOf};
+use crate::highlevel::{HighLevelOf, ReprAlignOf, ReprPackedOf, Type};
 
 pub mod into_bytelevel;
 pub mod padding;
