@@ -17,6 +17,7 @@ macro_rules! primitive_layout {
             impl<Align, Packed, Offset> IntoByteLevel<Align, Packed, Offset> for $ty
             where
                 Offset: Add<$size>,
+                Sum<Offset, $size>: Unsigned,
             {
                 type Output = PCons<InitializedSlot<$size>, PNil>;
                 type Offset = Sum<Offset, $size>;

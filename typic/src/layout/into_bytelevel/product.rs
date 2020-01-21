@@ -3,12 +3,18 @@ use super::field::FieldIntoByteLevel;
 use crate::bytelevel::{self, slot::PaddingSlot};
 use crate::highlevel;
 use crate::layout::{padding::PadTo, IntoByteLevel};
-use crate::num;
+use crate::num::{self, Unsigned};
 
 #[rustfmt::skip]
 impl<Align, Packed, Offset> IntoByteLevel<Align, Packed, Offset> for highlevel::PNil
 where
+    Align: Unsigned,
     Offset: PadTo<Align> + num::Add<<Offset as PadTo<Align>>::Output>,
+
+    num::Sum<
+            Offset,
+            <Offset as PadTo<Align>>::Output
+        >: Unsigned,
 {
     type Output =
         bytelevel::PCons<
@@ -48,6 +54,16 @@ where
                 <F as FieldIntoByteLevel<Packed, Offset>>::Offset,
             >>::Align,
         >,
+
+    num::Maximum<
+        <F as FieldIntoByteLevel<Packed, Offset>>::Align,
+        <R as IntoByteLevel<
+            Align,
+            Packed,
+            <F as FieldIntoByteLevel<Packed, Offset>>::Offset,
+        >>::Align,
+    >: Unsigned,
+
 {
     type Output =
         bytelevel::Sum<
