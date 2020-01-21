@@ -4,16 +4,17 @@ pub mod coproduct;
 pub mod padding;
 pub mod product;
 
+pub use crate::num::Unsigned;
 pub use product::{Cons as PCons, Nil as PNil};
 
 pub trait Type {
     /// `align(N)`
     // TODO: Rename to `ReprAlign`.
-    type Align;
+    type Align: Unsigned;
 
     /// `packed(N)`
     // TODO: Rename to `ReprPacked`.
-    type Packed;
+    type Packed: Unsigned;
 
     /// An abstract representation of the type's structure.
     type HighLevel;

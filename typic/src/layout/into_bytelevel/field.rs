@@ -1,26 +1,29 @@
 use crate::bytelevel::{slot::PaddingSlot, PCons};
 use crate::layout::{Layout, PaddingNeededForField};
-use crate::num;
+use crate::num::{self, Unsigned};
 
 pub trait FieldIntoByteLevel<Packed, Offset> {
     /// The padded, byte-level representation of `Self`.
     type Output;
 
     /// The offset immediately following `Self`.
-    type Offset;
+    type Offset: Unsigned;
 
     /// The alignment of this field.
-    type Align;
+    type Align: Unsigned;
 }
 
 impl<Packed, Offset, F> FieldIntoByteLevel<Packed, Offset> for F
 where
-    F: Layout + PaddingNeededForField<Packed, Offset>,
+    F: Layout + PaddingNeededForField<Offset, Packed>,
     Offset: num::Add<<F as Layout>::Size>,
     Packed: num::Min<<F as Layout>::Align>,
+
+    num::Sum<Offset, <F as Layout>::Size>: Unsigned,
+    num::Minimum<Packed, <F as Layout>::Align>: Unsigned,
 {
     type Output = PCons<
-        PaddingSlot<<F as PaddingNeededForField<Packed, Offset>>::Output>,
+        PaddingSlot<<F as PaddingNeededForField<Offset, Packed>>::Output>,
         <F as Layout>::ByteLevel,
     >;
 

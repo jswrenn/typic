@@ -1,7 +1,7 @@
 //! Type-level operations on byte-level stuff.
 
 use crate::bytelevel::slot::*;
-use crate::bytelevel::{PCons, PNil};
+use crate::bytelevel::{product::Product, PCons, PNil};
 use crate::num;
 
 pub trait Add<RHS> {
@@ -10,6 +10,7 @@ pub trait Add<RHS> {
 
 pub type Sum<A, B> = <A as Add<B>>::Output;
 
+/*
 /// `PNil + PNil = PNil`
 impl Add<PNil> for PNil {
     type Output = PNil;
@@ -38,4 +39,16 @@ impl<'a, T> Add<PNil> for SharedRef<'a, T> {
 /// `UniqueRef<'a, T> + PNil = UniqueRef<'a, T>`.
 impl<'a, T> Add<PNil> for UniqueRef<'a, T> {
     type Output = Self;
+}
+*/
+
+impl<P: Product> Add<PNil> for P {
+    type Output = Self;
+}
+
+impl<RH, RT, P: Product> Add<PCons<RH, RT>> for P
+where
+    RT: Add<Self>,
+{
+    type Output = PCons<RH, <RT as Add<Self>>::Output>;
 }

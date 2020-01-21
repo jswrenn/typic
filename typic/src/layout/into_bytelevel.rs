@@ -1,6 +1,6 @@
 //! Compute the byte-level layout from a generic representation of a type.
 
-use crate::num::U0;
+use crate::num::{Unsigned, U0};
 
 pub mod field;
 pub mod primitives;
@@ -11,8 +11,8 @@ pub trait IntoByteLevel<Align, Packed, Offset = U0> {
     type Output;
 
     /// The size of the type.
-    type Offset;
+    type Offset: Unsigned;
 
     /// The actual alignment of the type.
-    type Align;
+    type Align: Unsigned;
 }
