@@ -3,6 +3,7 @@
 use crate::num::U0;
 
 pub mod field;
+pub mod primitives;
 pub mod product;
 
 pub trait IntoByteLevel<Align, Packed, Offset = U0> {
