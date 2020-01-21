@@ -1,4 +1,5 @@
 use crate::highlevel::{HighLevelOf, ReprAlignOf, ReprPackedOf, Type};
+use crate::num::Unsigned;
 
 pub mod into_bytelevel;
 pub mod padding;
@@ -9,10 +10,10 @@ pub use padding::PaddingNeededForField;
 /// The actual memory layout characteristics of `Self`.
 pub trait Layout {
     /// The actual alignment of `Self`.
-    type Align;
+    type Align: Unsigned;
 
     /// The actual size of `Self`.
-    type Size;
+    type Size: Unsigned;
 
     /// The byte-level representation of `Self`.
     type ByteLevel;
@@ -39,7 +40,7 @@ where
         <HighLevelOf<T> as IntoByteLevel<
             ReprAlignOf<T>,
             ReprPackedOf<T>,
-        >>::Output;
+        >>::Offset;
 
     type ByteLevel =
         <HighLevelOf<T> as IntoByteLevel<
