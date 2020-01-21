@@ -1,13 +1,27 @@
 //! Compute the byte-level layout of a product type.
 use super::field::FieldIntoByteLevel;
-use crate::bytelevel;
+use crate::bytelevel::{self, slot::PaddingSlot};
 use crate::highlevel;
-use crate::layout::IntoByteLevel;
+use crate::layout::{padding::PadTo, IntoByteLevel};
 use crate::num;
 
-impl<Align, Packed, Offset> IntoByteLevel<Align, Packed, Offset> for highlevel::PNil {
-    type Output = crate::TODO;
-    type Offset = Offset;
+#[rustfmt::skip]
+impl<Align, Packed, Offset> IntoByteLevel<Align, Packed, Offset> for highlevel::PNil
+where
+    Offset: PadTo<Align> + num::Add<<Offset as PadTo<Align>>::Output>,
+{
+    type Output =
+        bytelevel::PCons<
+            PaddingSlot<<Offset as PadTo<Align>>::Output>,
+            bytelevel::PNil
+        >;
+
+    type Offset =
+        num::Sum<
+            Offset,
+            <Offset as PadTo<Align>>::Output
+        >;
+
     type Align = Align;
 }
 
