@@ -1,7 +1,6 @@
 //! The byte-level representation of a type.
 
 pub mod coproduct;
-pub mod padding;
 pub mod product;
 
 pub use crate::num::Unsigned;
