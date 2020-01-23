@@ -3,7 +3,11 @@
 pub mod coproduct;
 pub mod product;
 
-pub use crate::num::Unsigned;
+use crate::num::Unsigned;
+
+#[doc(inline)]
+pub use coproduct::{Cons as CCons, Nil as CNil};
+#[doc(inline)]
 pub use product::{Cons as PCons, Nil as PNil};
 
 pub trait Type {
@@ -17,6 +21,6 @@ pub trait Type {
     type HighLevel;
 }
 
-pub type HighLevelOf<T> = <T as Type>::HighLevel;
-pub type ReprAlignOf<T> = <T as Type>::ReprAlign;
-pub type ReprPackedOf<T> = <T as Type>::ReprPacked;
+pub(crate) type HighLevelOf<T> = <T as Type>::HighLevel;
+pub(crate) type ReprAlignOf<T> = <T as Type>::ReprAlign;
+pub(crate) type ReprPackedOf<T> = <T as Type>::ReprPacked;
