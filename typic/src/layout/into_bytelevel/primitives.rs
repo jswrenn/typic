@@ -9,12 +9,12 @@ macro_rules! primitive_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
         $(
             impl Type for $ty {
-                type Align  = $align;
-                type Packed = $align;
+                type ReprAlign  = $align;
+                type ReprPacked = $align;
                 type HighLevel = Self;
             }
 
-            impl<Align, Packed, Offset> IntoByteLevel<Align, Packed, Offset> for $ty
+            impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
             where
                 Offset: Add<$size>,
                 Sum<Offset, $size>: Unsigned,

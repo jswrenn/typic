@@ -8,17 +8,15 @@ pub use product::{Cons as PCons, Nil as PNil};
 
 pub trait Type {
     /// `align(N)`
-    // TODO: Rename to `ReprAlign`.
-    type Align: Unsigned;
+    type ReprAlign: Unsigned;
 
     /// `packed(N)`
-    // TODO: Rename to `ReprPacked`.
-    type Packed: Unsigned;
+    type ReprPacked: Unsigned;
 
     /// An abstract representation of the type's structure.
     type HighLevel;
 }
 
 pub type HighLevelOf<T> = <T as Type>::HighLevel;
-pub type ReprAlignOf<T> = <T as Type>::Align;
-pub type ReprPackedOf<T> = <T as Type>::Packed;
+pub type ReprAlignOf<T> = <T as Type>::ReprAlign;
+pub type ReprPackedOf<T> = <T as Type>::ReprPacked;
