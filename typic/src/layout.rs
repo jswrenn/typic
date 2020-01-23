@@ -1,11 +1,11 @@
 use crate::highlevel::{HighLevelOf, ReprAlignOf, ReprPackedOf, Type};
 use crate::num::Unsigned;
 
-pub mod into_bytelevel;
-pub mod padding;
+mod into_bytelevel;
+mod padding;
 
-pub use into_bytelevel::IntoByteLevel;
-pub use padding::PaddingNeededForField;
+use into_bytelevel::IntoByteLevel;
+use padding::PaddingNeededForField;
 
 /// The actual memory layout characteristics of `Self`.
 pub trait Layout {
