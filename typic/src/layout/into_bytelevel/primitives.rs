@@ -177,3 +177,23 @@ where
     type Offset = Sum<Offset, PointerWidth>;
     type Align  = PointerWidth;
 }
+
+use core::cell::{Cell, UnsafeCell};
+
+impl<T> Type for Cell<T>
+where
+    T: Type,
+{
+    type ReprAlign  = <T as Type>::ReprAlign;
+    type ReprPacked = <T as Type>::ReprPacked;
+    type HighLevel =  <T as Type>::HighLevel;
+}
+
+impl<T> Type for UnsafeCell<T>
+where
+    T: Type,
+{
+    type ReprAlign  = <T as Type>::ReprAlign;
+    type ReprPacked = <T as Type>::ReprPacked;
+    type HighLevel =  <T as Type>::HighLevel;
+}
