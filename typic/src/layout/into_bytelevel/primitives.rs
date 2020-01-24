@@ -44,6 +44,21 @@ primitive_layout! {
     f64   { size: U8,           align: U8             };
 }
 
+use core::sync::atomic::*;
+
+primitive_layout! {
+    AtomicU8    { size: U1,           align: U1             };
+    AtomicU16   { size: U2,           align: U2             };
+    AtomicU32   { size: U4,           align: U4             };
+    AtomicU64   { size: U8,           align: U8             };
+    AtomicUsize { size: PointerWidth, align: PointerWidth   };
+    AtomicI8    { size: U1,           align: U1             };
+    AtomicI16   { size: U2,           align: U2             };
+    AtomicI32   { size: U4,           align: U4             };
+    AtomicI64   { size: U8,           align: U8             };
+    AtomicIsize { size: PointerWidth, align: PointerWidth   };
+}
+
 macro_rules! nonzero_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
         $(
@@ -138,6 +153,22 @@ impl<T> Type for *mut T {
 }
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *mut T
+where
+    Offset: Add<PointerWidth>,
+    Sum<Offset, PointerWidth>: Unsigned,
+{
+    type Output = ReferenceBytes<PNil>;
+    type Offset = Sum<Offset, PointerWidth>;
+    type Align  = PointerWidth;
+}
+
+impl<T> Type for AtomicPtr<T> {
+    type ReprAlign  = PointerWidth;
+    type ReprPacked = PointerWidth;
+    type HighLevel = Self;
+}
+
+impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for AtomicPtr<T>
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
