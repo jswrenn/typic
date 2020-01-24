@@ -1,5 +1,5 @@
 use super::IntoByteLevel;
-use crate::bytelevel::{slot::InitializedSlot, PCons, PNil};
+use crate::bytelevel::{slot::InitializedSlot, NonZeroSeq, PCons, PNil};
 use crate::highlevel::Type;
 
 use crate::num::*;
@@ -42,4 +42,43 @@ primitive_layout! {
     usize { size: PointerWidth, align: PointerWidth   };
     f32   { size: U4,           align: U4             };
     f64   { size: U8,           align: U8             };
+}
+
+macro_rules! nonzero_layout {
+    ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
+        $(
+            impl Type for $ty {
+                type ReprAlign  = $align;
+                type ReprPacked = $align;
+                type HighLevel = Self;
+            }
+
+            impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
+            where
+                Offset: Add<$size>,
+                Sum<Offset, $size>: Unsigned,
+            {
+                type Output = NonZeroSeq<$size, PNil>;
+                type Offset = Sum<Offset, $size>;
+                type Align  = $align;
+            }
+        )*
+    }
+}
+
+use core::num::*;
+
+nonzero_layout! {
+    NonZeroU8    { size: U1,           align: U1             };
+    NonZeroU16   { size: U2,           align: U2             };
+    NonZeroU32   { size: U4,           align: U4             };
+    NonZeroU64   { size: U8,           align: U8             };
+    NonZeroU128  { size: U16,          align: U16            };
+    NonZeroI8    { size: U1,           align: U1             };
+    NonZeroI16   { size: U2,           align: U2             };
+    NonZeroI32   { size: U4,           align: U4             };
+    NonZeroI64   { size: U8,           align: U8             };
+    NonZeroI128  { size: U16,          align: U16            };
+    NonZeroIsize { size: PointerWidth, align: PointerWidth   };
+    NonZeroUsize { size: PointerWidth, align: PointerWidth   };
 }
