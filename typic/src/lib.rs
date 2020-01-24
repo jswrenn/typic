@@ -1,4 +1,5 @@
 #[doc(hidden)]
+#[deprecated(note = "TODO")]
 pub enum TODO {}
 
 pub(crate) mod bytelevel;
