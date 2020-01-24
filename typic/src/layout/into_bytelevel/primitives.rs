@@ -1,5 +1,8 @@
 use super::IntoByteLevel;
-use crate::bytelevel::{slot::{InitializedSlot, SharedRef, UniqueRef}, NonZeroSeq, PCons, PNil, ReferenceBytes};
+use crate::bytelevel::{
+    slot::{InitializedSlot, SharedRef, UniqueRef},
+    NonZeroSeq, PCons, PNil, ReferenceBytes,
+};
 use crate::highlevel::Type;
 
 use crate::num::*;
@@ -9,9 +12,9 @@ macro_rules! primitive_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
         $(
             impl Type for $ty {
-                type ReprAlign  = $align;
-                type ReprPacked = $align;
-                type HighLevel = Self;
+                #[doc(hidden)] type ReprAlign  = $align;
+                #[doc(hidden)] type ReprPacked = $align;
+                #[doc(hidden)] type HighLevel = Self;
             }
 
             impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
@@ -63,9 +66,9 @@ macro_rules! nonzero_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
         $(
             impl Type for $ty {
-                type ReprAlign  = $align;
-                type ReprPacked = $align;
-                type HighLevel = Self;
+                #[doc(hidden)] type ReprAlign  = $align;
+                #[doc(hidden)] type ReprPacked = $align;
+                #[doc(hidden)] type HighLevel = Self;
             }
 
             impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
@@ -98,10 +101,11 @@ nonzero_layout! {
     NonZeroUsize { size: PointerWidth, align: PointerWidth   };
 }
 
+#[rustfmt::skip]
 impl<'a, T> Type for &'a T {
-    type ReprAlign  = PointerWidth;
-    type ReprPacked = PointerWidth;
-    type HighLevel = Self;
+    #[doc(hidden)] type ReprAlign  = PointerWidth;
+    #[doc(hidden)] type ReprPacked = PointerWidth;
+    #[doc(hidden)] type HighLevel = Self;
 }
 
 impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for &'a T
@@ -111,29 +115,32 @@ where
 {
     type Output = PCons<SharedRef<'a, T>, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
-    type Align  = PointerWidth;
+    type Align = PointerWidth;
 }
 
+#[rustfmt::skip]
 impl<'a, T> Type for &'a mut T {
-    type ReprAlign  = PointerWidth;
-    type ReprPacked = PointerWidth;
-    type HighLevel = Self;
+    #[doc(hidden)] type ReprAlign  = PointerWidth;
+    #[doc(hidden)] type ReprPacked = PointerWidth;
+    #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for &'a mut T
+impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset>
+    for &'a mut T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
 {
     type Output = PCons<UniqueRef<'a, T>, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
-    type Align  = PointerWidth;
+    type Align = PointerWidth;
 }
 
+#[rustfmt::skip]
 impl<T> Type for *const T {
-    type ReprAlign  = PointerWidth;
-    type ReprPacked = PointerWidth;
-    type HighLevel = Self;
+    #[doc(hidden)] type ReprAlign  = PointerWidth;
+    #[doc(hidden)] type ReprPacked = PointerWidth;
+    #[doc(hidden)] type HighLevel = Self;
 }
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *const T
@@ -143,13 +150,14 @@ where
 {
     type Output = ReferenceBytes<PNil>;
     type Offset = Sum<Offset, PointerWidth>;
-    type Align  = PointerWidth;
+    type Align = PointerWidth;
 }
 
+#[rustfmt::skip]
 impl<T> Type for *mut T {
-    type ReprAlign  = PointerWidth;
-    type ReprPacked = PointerWidth;
-    type HighLevel = Self;
+    #[doc(hidden)] type ReprAlign  = PointerWidth;
+    #[doc(hidden)] type ReprPacked = PointerWidth;
+    #[doc(hidden)] type HighLevel = Self;
 }
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *mut T
@@ -159,13 +167,14 @@ where
 {
     type Output = ReferenceBytes<PNil>;
     type Offset = Sum<Offset, PointerWidth>;
-    type Align  = PointerWidth;
+    type Align = PointerWidth;
 }
 
+#[rustfmt::skip]
 impl<T> Type for AtomicPtr<T> {
-    type ReprAlign  = PointerWidth;
-    type ReprPacked = PointerWidth;
-    type HighLevel = Self;
+    #[doc(hidden)] type ReprAlign  = PointerWidth;
+    #[doc(hidden)] type ReprPacked = PointerWidth;
+    #[doc(hidden)] type HighLevel = Self;
 }
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for AtomicPtr<T>
@@ -175,25 +184,27 @@ where
 {
     type Output = ReferenceBytes<PNil>;
     type Offset = Sum<Offset, PointerWidth>;
-    type Align  = PointerWidth;
+    type Align = PointerWidth;
 }
 
 use core::cell::{Cell, UnsafeCell};
 
+#[rustfmt::skip]
 impl<T> Type for Cell<T>
 where
     T: Type,
 {
-    type ReprAlign  = <T as Type>::ReprAlign;
-    type ReprPacked = <T as Type>::ReprPacked;
-    type HighLevel =  <T as Type>::HighLevel;
+    #[doc(hidden)] type ReprAlign  = <T as Type>::ReprAlign;
+    #[doc(hidden)] type ReprPacked = <T as Type>::ReprPacked;
+    #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
+#[rustfmt::skip]
 impl<T> Type for UnsafeCell<T>
 where
     T: Type,
 {
-    type ReprAlign  = <T as Type>::ReprAlign;
-    type ReprPacked = <T as Type>::ReprPacked;
-    type HighLevel =  <T as Type>::HighLevel;
+    #[doc(hidden)] type ReprAlign  = <T as Type>::ReprAlign;
+    #[doc(hidden)] type ReprPacked = <T as Type>::ReprPacked;
+    #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
