@@ -114,3 +114,35 @@ where
     type Offset = Sum<Offset, PointerWidth>;
     type Align  = PointerWidth;
 }
+
+impl<T> Type for *const T {
+    type ReprAlign  = PointerWidth;
+    type ReprPacked = PointerWidth;
+    type HighLevel = Self;
+}
+
+impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *const T
+where
+    Offset: Add<PointerWidth>,
+    Sum<Offset, PointerWidth>: Unsigned,
+{
+    type Output = ReferenceBytes<PNil>;
+    type Offset = Sum<Offset, PointerWidth>;
+    type Align  = PointerWidth;
+}
+
+impl<T> Type for *mut T {
+    type ReprAlign  = PointerWidth;
+    type ReprPacked = PointerWidth;
+    type HighLevel = Self;
+}
+
+impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *mut T
+where
+    Offset: Add<PointerWidth>,
+    Sum<Offset, PointerWidth>: Unsigned,
+{
+    type Output = ReferenceBytes<PNil>;
+    type Offset = Sum<Offset, PointerWidth>;
+    type Align  = PointerWidth;
+}
