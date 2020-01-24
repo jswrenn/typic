@@ -1,5 +1,5 @@
 use super::IntoByteLevel;
-use crate::bytelevel::{slot::InitializedSlot, NonZeroSeq, PCons, PNil};
+use crate::bytelevel::{slot::{InitializedSlot, SharedRef, UniqueRef}, NonZeroSeq, PCons, PNil, ReferenceBytes};
 use crate::highlevel::Type;
 
 use crate::num::*;
@@ -81,4 +81,36 @@ nonzero_layout! {
     NonZeroI128  { size: U16,          align: U16            };
     NonZeroIsize { size: PointerWidth, align: PointerWidth   };
     NonZeroUsize { size: PointerWidth, align: PointerWidth   };
+}
+
+impl<'a, T> Type for &'a T {
+    type ReprAlign  = PointerWidth;
+    type ReprPacked = PointerWidth;
+    type HighLevel = Self;
+}
+
+impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for &'a T
+where
+    Offset: Add<PointerWidth>,
+    Sum<Offset, PointerWidth>: Unsigned,
+{
+    type Output = PCons<SharedRef<'a, T>, PNil>;
+    type Offset = Sum<Offset, PointerWidth>;
+    type Align  = PointerWidth;
+}
+
+impl<'a, T> Type for &'a mut T {
+    type ReprAlign  = PointerWidth;
+    type ReprPacked = PointerWidth;
+    type HighLevel = Self;
+}
+
+impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for &'a mut T
+where
+    Offset: Add<PointerWidth>,
+    Sum<Offset, PointerWidth>: Unsigned,
+{
+    type Output = PCons<UniqueRef<'a, T>, PNil>;
+    type Offset = Sum<Offset, PointerWidth>;
+    type Align  = PointerWidth;
 }
