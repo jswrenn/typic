@@ -1,6 +1,8 @@
 use core::mem;
 
 mod from_layout;
+
+#[rustfmt::skip]
 mod from_type;
 
 /// Transmute `Self` into `U`, if all possible instantiations of `Self` are
