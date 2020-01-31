@@ -1,9 +1,10 @@
 use core::mem;
 
-mod from_layout;
-
 #[rustfmt::skip]
 mod from_type;
+
+#[rustfmt::skip]
+mod from_layout;
 
 /// Transmute `Self` into `U`, if all possible instantiations of `Self` are
 /// valid instantiations of `U`.
@@ -21,4 +22,4 @@ pub unsafe trait Transmute<U> {
     }
 }
 
-unsafe impl<T, U> Transmute<U> for T where U: from_type::FromType<T> {}
+unsafe impl<T, U> Transmute<U> for T where U: from_type::Subsumes<T> {}
