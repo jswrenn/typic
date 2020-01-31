@@ -13,14 +13,10 @@ use crate::target::PointerWidth;
 
 #[cfg(target_endian = "little")]
 pub type NonZeroSeq<S, Rest> =
-  PCons<slot::NonZeroSlot<U1>,
-    PCons<slot::InitializedSlot<Sub1<S>>,
-      Rest>>;
+    PCons<slot::NonZeroSlot<U1>, PCons<slot::InitializedSlot<Sub1<S>>, Rest>>;
 
 #[cfg(target_endian = "big")]
 pub type NonZeroSeq<S, Rest> =
-  PCons<slot::InitializedSlot<Sub1<S>,
-    PCons<slot::NonZeroSlot<U1>>,
-      Rest>>;
+    PCons<slot::InitializedSlot<Sub1<S>, PCons<slot::NonZeroSlot<U1>>, Rest>>;
 
 pub type ReferenceBytes<Rest> = NonZeroSeq<PointerWidth, Rest>;
