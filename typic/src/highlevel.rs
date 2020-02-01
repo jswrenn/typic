@@ -3,12 +3,15 @@
 pub mod coproduct;
 pub mod product;
 
-use crate::num::Unsigned;
+use crate::num::{U1, U536870912, Unsigned};
 
 #[doc(inline)]
 pub use coproduct::{Cons as CCons, Nil as CNil};
 #[doc(inline)]
 pub use product::{Cons as PCons, Nil as PNil};
+
+pub type MinAlign = U1;
+pub type MaxAlign = U536870912;
 
 pub trait Type {
     /// `align(N)`
