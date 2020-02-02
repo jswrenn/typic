@@ -3,7 +3,8 @@
 pub mod coproduct;
 pub mod product;
 
-use crate::num::{U1, U536870912, Unsigned};
+pub use typenum::consts::*;
+use crate::num::{Unsigned};
 
 #[doc(inline)]
 pub use coproduct::{Cons as CCons, Nil as CNil};
