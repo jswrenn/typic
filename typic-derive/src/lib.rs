@@ -7,8 +7,10 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::*;
 use syn;
 use syn::{Meta, Attribute, Lit, NestedMeta};
-use syn::parse_macro_input;
+use syn::{parse_macro_input, parse_quote};
 use syn::visit::Visit;
+use std::cmp::Ord;
+use std::cmp::{min, max};
 
 #[proc_macro_attribute]
 pub fn typicrepr(_args: TokenStream, input: TokenStream) -> TokenStream {
@@ -41,8 +43,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
                 <#name #ty_generics as typic::highlevel::Type>::ReprPacked;
 
             #[doc(hidden)]
-            type Representation =
-                <#name #ty_generics as typic::highlevel::Type>::Representation;
+            type HighLevel =
+                <#name #ty_generics as typic::highlevel::Type>::HighLevel;
           }
         }).into();
     }
@@ -52,8 +54,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
         .unwrap_or(format_ident!("MinAlign"));
 
     let repr_packed =
-      repr.align.map(|n| format_ident!("U{}", n))
-        .unwrap_or(format_ident!("MinPacked"));
+      repr.packed.map(|n| format_ident!("U{}", n))
+        .unwrap_or(format_ident!("MaxAlign"));
 
     // no repr
     if let None = repr.method {
@@ -65,7 +67,7 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
         {
           #[doc(hidden)] type ReprAlign = typic::highlevel::#repr_align;
           #[doc(hidden)] type ReprPacked = typic::highlevel::#repr_packed;
-          #[doc(hidden)] type Representation = Self;
+          #[doc(hidden)] type HighLevel = Self;
         }
       }).into()
     }
@@ -90,7 +92,7 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
       {
         #[doc(hidden)] type ReprAlign = typic::highlevel::#repr_align;
         #[doc(hidden)] type ReprPacked = typic::highlevel::#repr_packed;
-        #[doc(hidden)] type Representation = #fields;
+        #[doc(hidden)] type HighLevel = #fields;
       }
     })
     .into()
@@ -98,7 +100,9 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn repr(args: TokenStream, input: TokenStream) -> TokenStream {
-    let definition: syn::Item = parse_macro_input!(input);
+    let args : TokenStream2 = args.into();
+    let input : TokenStream2 = input.into();
+    let definition: syn::Item = parse_quote!(#[repr(#args)] #input);
 
     match definition {
         syn::Item::Struct(definition) => impl_struct(definition),
@@ -106,13 +110,14 @@ pub fn repr(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 enum Method {
     C,
     Packed,
     Transparent,
 }
 
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 enum Size {
     I8,
     I16,
@@ -128,7 +133,7 @@ enum Size {
     USize,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Eq, PartialEq, Clone, Copy)]
 struct Repr {
     method: Option<Method>,
     align:  Option<u32>,
@@ -153,7 +158,7 @@ impl<'ast> Visit<'ast> for Repr {
                                     self.method = Some(Method::Transparent),
 
                                 "packed" =>
-                                    self.packed = Some(1),
+                                    self.packed = self.packed.min(Some(1)),
 
                                 "i8"    => self.size = Some(Size::I8),
                                 "i16"   => self.size = Some(Size::I16),
@@ -181,10 +186,10 @@ impl<'ast> Visit<'ast> for Repr {
                                 then {
                                     match &ident[..] {
                                         "align" => {
-                                            self.align = Some(n);
+                                            self.align = self.align.max(Some(n));
                                         },
                                         "packed" => {
-                                             self.packed = Some(n);
+                                             self.packed = self.packed.min(Some(n));
                                         }
                                         _ => {}
                                     }
