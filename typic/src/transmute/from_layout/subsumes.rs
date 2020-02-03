@@ -79,3 +79,12 @@ Subsumes<PCons<SharedRef<'t, T>, TRest>>
 where
     Self: Subsumes<ReferenceBytes<TRest>>
 {}
+
+#[cfg(test)] const _ : () = {
+  use static_assertions::*;
+  use crate::num::*;
+
+  assert_impl_all!(PNil: Subsumes<PNil>);
+
+  assert_impl_all!(PCons<PaddingSlot<U0>, PNil>: Subsumes<PCons<PaddingSlot<U0>, PNil>>);
+};

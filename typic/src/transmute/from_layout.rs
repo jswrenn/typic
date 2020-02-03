@@ -20,11 +20,48 @@ pub trait Consume<TSize> {
 #[rustfmt::skip]
 impl<TSize, USize> Consume<TSize> for USize
 where
-    TSize: num::Max<USize>,
-    TSize: num::Sub<num::Maximum<TSize, USize>>,
-    USize: num::Sub<num::Maximum<TSize, USize>>,
+    TSize: num::Min<USize>,
+    TSize: num::Sub<num::Minimum<TSize, USize>>,
+    USize: num::Sub<num::Minimum<TSize, USize>>,
 {
-    type TSize = num::Diff<TSize, num::Maximum<TSize, USize>>;
-    type USize = num::Diff<USize, num::Maximum<TSize, USize>>;
+    type TSize = num::Diff<TSize, num::Minimum<TSize, USize>>;
+    type USize = num::Diff<USize, num::Minimum<TSize, USize>>;
 }
 
+
+#[cfg(test)]
+fn subsumes<T, U: Subsumes<T>>()
+{}
+
+#[cfg(test)]
+macro_rules! P {
+  () => { crate::bytelevel::PNil };
+  (...$Rest:ty) => { $Rest };
+  ($A:ty) => { P![$A,] };
+  ($A:ty, $($tok:tt)*) => {
+      crate::bytelevel::PCons<$A, P![$($tok)*]>
+  };
+}
+
+#[test]
+fn test() {
+  use crate::typic::{self, num::*, highlevel::Type, layout::Layout};
+  use crate::typic::bytelevel::slot::{bytes::kind, *};
+  use static_assertions::*;
+  use crate::bytelevel as blvl;
+
+  subsumes::<
+    P![PaddingSlot<U2>],
+    P![]
+  >();
+
+  subsumes::<
+    P![PaddingSlot<U2>],
+    P![PaddingSlot<U1>]
+  >();
+
+  subsumes::<
+    P![PaddingSlot<U1>, PaddingSlot<U1>],
+    P![PaddingSlot<U2>]
+  >();
+}

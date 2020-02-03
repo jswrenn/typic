@@ -11,7 +11,12 @@ pub(crate) mod transmute;
 pub mod highlevel;
 
 #[doc(inline)]
-pub use transmute::Transmute;
+pub use transmute::{transmute, TransmuteFrom, TransmuteInto};
 
 #[doc(inline)]
 pub use typic_derive::repr;
+
+#[cfg(test)]
+mod typic {
+    pub use crate::*;
+}

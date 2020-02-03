@@ -5,12 +5,12 @@ use if_chain::*;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::*;
-use syn;
-use syn::{Meta, Attribute, Lit, NestedMeta};
-use syn::{parse_macro_input, parse_quote};
-use syn::visit::Visit;
 use std::cmp::Ord;
-use std::cmp::{min, max};
+use std::cmp::{max, min};
+use syn;
+use syn::visit::Visit;
+use syn::{parse_macro_input, parse_quote};
+use syn::{Attribute, Lit, Meta, NestedMeta};
 
 #[proc_macro_attribute]
 pub fn typicrepr(_args: TokenStream, input: TokenStream) -> TokenStream {
@@ -25,7 +25,9 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let mut repr = Repr::default();
-    attrs.into_iter().for_each(|attr| repr.visit_attribute(attr));
+    attrs
+        .into_iter()
+        .for_each(|attr| repr.visit_attribute(attr));
 
     if let Some(Method::Transparent) = repr.method {
         return (quote! {
@@ -46,30 +48,34 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
             type HighLevel =
                 <#name #ty_generics as typic::highlevel::Type>::HighLevel;
           }
-        }).into();
+        })
+        .into();
     }
 
-    let repr_align =
-      repr.align.map(|n| format_ident!("U{}", n))
+    let repr_align = repr
+        .align
+        .map(|n| format_ident!("U{}", n))
         .unwrap_or(format_ident!("MinAlign"));
 
-    let repr_packed =
-      repr.packed.map(|n| format_ident!("U{}", n))
+    let repr_packed = repr
+        .packed
+        .map(|n| format_ident!("U{}", n))
         .unwrap_or(format_ident!("MaxAlign"));
 
     // no repr
     if let None = repr.method {
-      return (quote! {
-        #definition
+        return (quote! {
+          #definition
 
-        impl #impl_generics typic::highlevel::Type
-        for #name #ty_generics #where_clause
-        {
-          #[doc(hidden)] type ReprAlign = typic::highlevel::#repr_align;
-          #[doc(hidden)] type ReprPacked = typic::highlevel::#repr_packed;
-          #[doc(hidden)] type HighLevel = Self;
-        }
-      }).into()
+          impl #impl_generics typic::highlevel::Type
+          for #name #ty_generics #where_clause
+          {
+            #[doc(hidden)] type ReprAlign = typic::highlevel::#repr_align;
+            #[doc(hidden)] type ReprPacked = typic::highlevel::#repr_packed;
+            #[doc(hidden)] type HighLevel = Self;
+          }
+        })
+        .into();
     }
 
     // otherwise, it's a C repr
@@ -100,8 +106,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn repr(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args : TokenStream2 = args.into();
-    let input : TokenStream2 = input.into();
+    let args: TokenStream2 = args.into();
+    let input: TokenStream2 = input.into();
     let definition: syn::Item = parse_quote!(#[repr(#args)] #input);
 
     match definition {
@@ -136,9 +142,9 @@ enum Size {
 #[derive(Default, Debug, Eq, PartialEq, Clone, Copy)]
 struct Repr {
     method: Option<Method>,
-    align:  Option<u32>,
+    align: Option<u32>,
     packed: Option<u32>,
-    size:   Option<Size>,
+    size: Option<Size>,
 }
 
 impl<'ast> Visit<'ast> for Repr {
@@ -150,9 +156,15 @@ impl<'ast> Visit<'ast> for Repr {
             then {
                 for meta in meta_list.nested {
                     match meta {
-                        NestedMeta::Lit(Lit::Verbatim(lit)) => {
-                            match &lit.to_string()[..] {
-                                "c" =>
+                        NestedMeta::Meta(Meta::Path(path)) => {
+                            let ident = (if let Some(ident) = path.get_ident() {
+                                ident.to_string()
+                            } else {
+                                continue;
+                            });
+
+                            match &ident[..] {
+                                "C" =>
                                     self.method = Some(Method::C),
                                 "transparent" =>
                                     self.method = Some(Method::Transparent),
