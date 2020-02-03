@@ -5,7 +5,7 @@ use super::from_layout::Subsumes as LayoutSubsumes;
 /// an instance of `Self`.
 pub unsafe trait Subsumes<T> {}
 
-unsafe impl<T, U> Subsumes<U> for T
+unsafe impl<T, U> Subsumes<T> for U
 where
     T: Layout,
     U: Layout,

@@ -48,3 +48,6 @@ where
             ReprPackedOf<T>,
         >>::Output;
 }
+
+#[cfg(test)]
+mod test;
