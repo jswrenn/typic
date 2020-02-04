@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 #[doc(hidden)]
 #[deprecated(note = "TODO")]
 pub enum TODO {}

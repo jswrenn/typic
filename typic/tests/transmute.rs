@@ -1,4 +1,5 @@
 use core::mem::align_of;
+use core::num::NonZeroU8;
 use static_assertions::*;
 use typic::{self, TransmuteInto};
 
@@ -59,14 +60,33 @@ fn padding_transmute() {
 
 #[test]
 fn arrays() {
-  // The inner type of the array may be mutated
-  let _: [u8; 4] = [0u16; 2].transmute_into();
-  let _: [u16; 2] = [0u8; 4].transmute_into();
+    // The inner type of the array may be mutated
+    let _: [u8; 4] = [0u16; 2].transmute_into();
+    let _: [u16; 2] = [0u8; 4].transmute_into();
 
-  // Arrays may be shrunk
-  let _: [u8; 4] = [0u8; 5].transmute_into();
+    // Arrays may be shrunk
+    let _: [u8; 4] = [0u8; 5].transmute_into();
 
-  // Arrays may not be grown:
-  assert_not_impl_any!([u8; 4]: TransmuteInto<[u8; 5]>);
-  assert_not_impl_any!([u8; 4]: TransmuteInto<[u16; 4]>);
+    // Arrays may not be grown:
+    assert_not_impl_any!([u8; 4]: TransmuteInto<[u8; 5]>);
+    assert_not_impl_any!([u8; 4]: TransmuteInto<[u16; 4]>);
+}
+
+#[test]
+fn references() {
+    // You may transmute to a less strictly aligned type:
+    let _: &[u8; 0] = (&[0u16; 0]).transmute_into();
+
+    // ...but not a more strictly aligned type:
+    assert_not_impl_any!(&'static [u8; 0]: TransmuteInto<&'static [u16; 0]>);
+
+    // You cannot alter the validity with a pointer transmute:
+    assert_not_impl_any!(&'static u8: TransmuteInto<&'static NonZeroU8>);
+    assert_not_impl_any!(&'static NonZeroU8: TransmuteInto<&'static u8>);
+
+    // You may decrease the size:
+    let _: &u8 = (&0u16).transmute_into();
+
+    // ...but you cannot increase the size:
+    assert_not_impl_any!(&'static u8: TransmuteInto<&'static u16>);
 }

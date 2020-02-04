@@ -1,66 +1,206 @@
-use crate::num;
-use super::from_type;
+use crate::bytelevel::{
+    self as blv,
+    slot::{bytes::kind, *},
+    PCons, PNil, ReferenceBytes,
+};
+use crate::layout::{Layout, AlignedTo};
+use crate::num::{self, UInt, UTerm};
+use super::from_type::FromType;
+use super::{Relax, Constrain};
 
-mod subsumes;
-mod equivalent;
+mod consume;
+pub use consume::Consume;
 
-pub use subsumes::Subsumes;
-pub use equivalent::Equivalent;
+mod flatten;
+pub use flatten::Flatten;
 
-/// Consume `Maximum<TSize, USize>` of the leading bytes of two layouts.
-pub trait Consume<TSize> {
-    /// The number of bytes to append back on `TRest`.
-    type TSize;
+/// A marker trait implemented if the layout `T` is compatible with the layout
+/// `Self`.
+pub unsafe trait FromLayout<T, M> {}
 
-    /// The number of bytes to append back on `URest`.
-    type USize;
+/// ANYTHING -> []
+unsafe impl<T, M> FromLayout<T, M> for PNil {}
+
+mod bytes_to {
+    use super::*;
+
+    /// [Bytes|_] -> [Array|_]
+    #[rustfmt::skip] unsafe impl<TKind, TSize, TRest, U, USize, URest, M>
+    FromLayout<PCons<Bytes<TKind, TSize>, TRest>, M>
+         for PCons<Array<U, USize>, URest>
+    where
+        Self: Flatten,
+        <Self as Flatten>::Output:
+          FromLayout<PCons<Bytes<TKind, TSize>, TRest>, M>
+    {}
+
+    /// [Bytes|_] -> [Bytes|_]
+    #[rustfmt::skip] unsafe impl<TKind, TSize, TRest, UKind, USize, URest, M>
+    FromLayout<PCons<Bytes<TKind, TSize>, TRest>, M>
+         for PCons<Bytes<UKind, USize>, URest>
+    where
+        Bytes<UKind, USize>: BytesFromBytes<Bytes<TKind, TSize>, M>,
+        USize: Consume<TSize>,
+
+        Bytes<TKind, <USize as Consume<TSize>>::TSize>: blv::Add<TRest>,
+        Bytes<UKind, <USize as Consume<TSize>>::USize>: blv::Add<URest>,
+
+        blv::Sum<Bytes<UKind, <USize as Consume<TSize>>::USize>, URest>:
+          FromLayout<blv::Sum<Bytes<TKind, <USize as Consume<TSize>>::TSize>, TRest>, M>
+    {}
+
+    /// Implemented if a byte of `TKind` is transmutable to a byte of `Self`.
+    pub trait BytesFromBytes<T, M> {}
+
+    /*
+    macro_rules! from_bytes {
+      ($($TKind: path => $UKind: path,)*) => {
+        $(
+          impl<A, B, C, D, M>
+          BytesFromBytes<Bytes<$TKind, num::UInt<A, B>>, M>
+                    for Bytes<$UKind, num::UInt<C, D>>
+          {}
+        )*
+      };
+    }
+
+    from_bytes![
+      kind::NonZero       => kind::Uninitialized ,
+      kind::NonZero       => kind::Initialized   ,
+      kind::NonZero       => kind::NonZero       ,
+      kind::Initialized   => kind::Uninitialized ,
+      kind::Initialized   => kind::Initialized   ,
+      kind::Uninitialized => kind::Uninitialized ,
+    ];
+    */
+    macro_rules! constrain {
+      ($($TKind: path => $UKind: path,)*) => {
+        $(
+          impl<A, B, C, D, M>
+          BytesFromBytes<Bytes<$TKind, num::UInt<A, B>>, M>
+                    for Bytes<$UKind, num::UInt<C, D>>
+          {}
+        )*
+      };
+    }
+
+    constrain![
+      kind::NonZero       => kind::NonZero       ,
+      kind::Initialized   => kind::Initialized   ,
+      kind::Uninitialized => kind::Uninitialized ,
+    ];
+
+    macro_rules! relax {
+      ($($TKind: path => $UKind: path,)*) => {
+        $(
+          impl<A, B, C, D>
+          BytesFromBytes<Bytes<$TKind, num::UInt<A, B>>, Relax>
+                    for Bytes<$UKind, num::UInt<C, D>>
+          {}
+        )*
+      };
+    }
+
+    relax![
+      kind::NonZero       => kind::Uninitialized ,
+      kind::NonZero       => kind::Initialized   ,
+      kind::Initialized   => kind::Uninitialized ,
+    ];
+
+
+    // If either sizes are empty, `BytesFromBytes` vacuously holds.
+    impl<TKind, UKind, M> BytesFromBytes<Bytes<TKind, num::UTerm>, M> for Bytes<UKind, num::UTerm> {}
+    impl<TKind, A, B, UKind, M> BytesFromBytes<Bytes<TKind, num::UInt<A, B>>, M> for Bytes<UKind, num::UTerm> {}
+    impl<TKind, UKind, A, B, M> BytesFromBytes<Bytes<TKind, num::UTerm>, M> for Bytes<UKind, num::UInt<A, B>> {}
+
+    /// [Bytes|_] -> [Reference|_]
+    #[rustfmt::skip] unsafe impl<'u, TKind, TRest, UK, U, URest, M>
+    FromLayout<PCons<Bytes<TKind, num::UTerm>, TRest>, M>
+         for PCons<Reference<'u, UK, U>, URest>
+    where
+        Self: FromLayout<TRest, M>,
+    {}
 }
 
+mod array_to {
+    use super::*;
 
-#[rustfmt::skip]
-impl<TSize, USize> Consume<TSize> for USize
-where
-    TSize: num::Min<USize>,
-    TSize: num::Sub<num::Minimum<TSize, USize>>,
-    USize: num::Sub<num::Minimum<TSize, USize>>,
-{
-    type TSize = num::Diff<TSize, num::Minimum<TSize, USize>>;
-    type USize = num::Diff<USize, num::Minimum<TSize, USize>>;
+    /// [Array|_] -> [Array|_]
+    #[rustfmt::skip] unsafe impl<T, TSize, TRest, U, USize, URest, M>
+    FromLayout<PCons<Array<T, TSize>, TRest>, M>
+         for PCons<Array<U, USize>, URest>
+    where
+        PCons<Array<T, TSize>, TRest>: Flatten,
+        PCons<Array<U, USize>, URest>: Flatten,
+
+        <PCons<Array<U, USize>, URest> as Flatten>::Output:
+            FromLayout<<PCons<Array<T, TSize>, TRest> as Flatten>::Output, M>,
+    {}
+
+    /// [Array|_] -> [Bytes|_]
+    #[rustfmt::skip] unsafe impl<T, TSize, TRest, UKind, USize, URest, M>
+    FromLayout<PCons<Array<T, TSize>, TRest>, M>
+         for PCons<Bytes<UKind, USize>, URest>
+    where
+        PCons<Array<T, TSize>, TRest>: Flatten,
+
+        Self: FromLayout<<PCons<Array<T, TSize>, TRest> as Flatten>::Output, M>,
+    {}
+
+    /// [Array|_] -> [Reference|_]
+    #[rustfmt::skip] unsafe impl<'u, T, TSize, TRest, UK, U, URest, M>
+    FromLayout<PCons<Array<T, TSize>, TRest>, M>
+         for PCons<Reference<'u, UK, U>, URest>
+    where
+        PCons<Array<T, TSize>, TRest>: Flatten,
+
+        Self: FromLayout<<PCons<Array<T, TSize>, TRest> as Flatten>::Output, M>,
+    {}
 }
 
-use crate::layout::Layout;
-use crate::bytelevel::{self as blv, slot::Array, PCons};
+mod reference_to {
+    use super::*;
 
-pub trait Flatten {
-    type Output;
+    /// [Reference|_] -> [Array|_]
+    #[rustfmt::skip] unsafe impl<'t, T, TK, TRest, U, USize, URest, M>
+    FromLayout<PCons<Reference<'t, TK, T>, TRest>, M>
+         for PCons<Array<U, USize>, URest>
+    where
+        Self: Flatten,
+        <Self as Flatten>::Output:
+          FromLayout<PCons<Reference<'t, TK, T>, TRest>, M>,
+    {}
+
+    /// [Reference|_] -> [Bytes|_]
+    #[rustfmt::skip] unsafe impl<'t, T, TK, TRest, UKind, USize, URest, M>
+    FromLayout<PCons<Reference<'t, TK, T>, TRest>, M>
+         for PCons<Bytes<UKind, USize>, URest>
+    where
+        Self: FromLayout<ReferenceBytes<TRest>, M>,
+    {}
+
+    pub trait FromMutability<T> {}
+    impl FromMutability<Unique> for Unique {}
+    impl FromMutability<Unique> for Shared {}
+    impl FromMutability<Shared> for Shared {}
+
+    /// [Reference|_] -> [Reference|_]
+    #[rustfmt::skip] unsafe impl<'t, 'u, T, TK, TRest, U, UK, URest, M>
+    FromLayout<PCons<Reference<'t, TK, T>, TRest>, M>
+         for PCons<Reference<'u, UK, U>, URest>
+    where
+        't: 'u,
+        UK: FromMutability<TK>,
+        U: AlignedTo<T> + FromType<T, Constrain>,
+    {}
 }
 
-impl<T, TRest> Flatten for PCons<Array<T, num::UTerm>, TRest>
-where
-{
-    type Output = TRest;
-}
-
-impl<T, A, B, TRest> Flatten for PCons<Array<T, num::UInt<A, B>>, TRest>
-where
-    T: Layout,
-    num::UInt<A, B>: num::Sub<num::B1>,
-
-    <T as Layout>::ByteLevel:
-      blv::Add<PCons<Array<T, num::Sub1<num::UInt<A, B>>>, TRest>>,
-{
-    type Output =
-      blv::Sum<
-        <T as Layout>::ByteLevel,
-        PCons<Array<T, num::Sub1<num::UInt<A, B>>>, TRest>
-      >;
-}
 
 #[cfg(test)]
 mod test {
   use super::*;
 
-  fn subsumes<T, U: Subsumes<T>>()
+  fn subsumes<T, U: FromLayout<T, Relax>>()
   {}
 
   macro_rules! P {
