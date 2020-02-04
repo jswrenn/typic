@@ -26,11 +26,11 @@ fn zst_transmute() {
 fn small_transmute() {
     #[typic::repr(C)]
     #[derive(Default)]
-    struct T(u8, u8);
+    struct T(pub u8, pub u8);
 
     #[typic::repr(C)]
     #[derive(Default)]
-    struct U(u16);
+    struct U(pub u16);
 
     let _: U = T::default().transmute_into();
     let _: U = U::default().transmute_into();
@@ -42,11 +42,11 @@ fn small_transmute() {
 fn padding_transmute() {
     #[typic::repr(C)]
     #[derive(Default)]
-    struct Padded(u8, u16, u8);
+    struct Padded(pub u8, pub u16, pub u8);
 
     #[typic::repr(C)]
     #[derive(Default)]
-    struct Packed(u16, u16, u16);
+    struct Packed(pub u16, pub u16, pub u16);
 
     let _: Packed = Packed::default().transmute_into();
     let _: Padded = Padded::default().transmute_into();
