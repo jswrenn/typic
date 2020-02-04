@@ -1,11 +1,11 @@
 use super::IntoByteLevel;
-use crate::highlevel::{MinAlign, MaxAlign};
 use crate::bytelevel::{
     slot::{Array, InitializedSlot, SharedRef, UniqueRef},
     NonZeroSeq, PCons, PNil, ReferenceBytes,
 };
-use crate::layout::Layout;
 use crate::highlevel::Type;
+use crate::highlevel::{MaxAlign, MinAlign};
+use crate::layout::Layout;
 
 use crate::num::*;
 use crate::target::PointerWidth;
@@ -272,4 +272,3 @@ array_layout![
   31, U31;
   32, U32
 ];
-

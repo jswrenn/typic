@@ -1,6 +1,9 @@
 use crate::highlevel::Transparent;
 use core::mem;
 
+pub struct Relax;
+pub struct Constrain;
+
 #[rustfmt::skip]
 mod from_type;
 
@@ -40,7 +43,7 @@ where
 
 unsafe impl<T, U> TransmuteFrom<T> for U
 where
-    U: from_type::Subsumes<T>,
+    U: from_type::FromType<T, Relax>,
 {
     #[inline(always)]
     fn transmute_from(from: T) -> U {
@@ -58,7 +61,7 @@ where
 /// bypasses those restrictions, and may lead to later unsoundness.
 pub unsafe fn transmute<T, U>(from: T) -> U
 where
-    U: from_type::Subsumes<T>,
+    U: from_type::FromType<T, Relax>,
 {
     let to = mem::transmute_copy(&from);
     mem::forget(from);
