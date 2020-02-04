@@ -28,40 +28,70 @@ where
     type USize = num::Diff<USize, num::Minimum<TSize, USize>>;
 }
 
+use crate::layout::Layout;
+use crate::bytelevel::{self as blv, slot::Array, PCons};
 
-#[cfg(test)]
-fn subsumes<T, U: Subsumes<T>>()
-{}
-
-#[cfg(test)]
-macro_rules! P {
-  () => { crate::bytelevel::PNil };
-  (...$Rest:ty) => { $Rest };
-  ($A:ty) => { P![$A,] };
-  ($A:ty, $($tok:tt)*) => {
-      crate::bytelevel::PCons<$A, P![$($tok)*]>
-  };
+pub trait Flatten {
+    type Output;
 }
 
-#[test]
-fn test() {
-  use crate::typic::{self, num::*, highlevel::Type, layout::Layout};
-  use crate::typic::bytelevel::slot::{bytes::kind, *};
-  use static_assertions::*;
-  use crate::bytelevel as blvl;
+impl<T, TRest> Flatten for PCons<Array<T, num::UTerm>, TRest>
+where
+{
+    type Output = TRest;
+}
 
-  subsumes::<
-    P![PaddingSlot<U2>],
-    P![]
-  >();
+impl<T, A, B, TRest> Flatten for PCons<Array<T, num::UInt<A, B>>, TRest>
+where
+    T: Layout,
+    num::UInt<A, B>: num::Sub<num::B1>,
 
-  subsumes::<
-    P![PaddingSlot<U2>],
-    P![PaddingSlot<U1>]
-  >();
+    <T as Layout>::ByteLevel:
+      blv::Add<PCons<Array<T, num::Sub1<num::UInt<A, B>>>, TRest>>,
+{
+    type Output =
+      blv::Sum<
+        <T as Layout>::ByteLevel,
+        PCons<Array<T, num::Sub1<num::UInt<A, B>>>, TRest>
+      >;
+}
 
-  subsumes::<
-    P![PaddingSlot<U1>, PaddingSlot<U1>],
-    P![PaddingSlot<U2>]
-  >();
+#[cfg(test)]
+mod test {
+  use super::*;
+
+  fn subsumes<T, U: Subsumes<T>>()
+  {}
+
+  macro_rules! P {
+    () => { crate::bytelevel::PNil };
+    (...$Rest:ty) => { $Rest };
+    ($A:ty) => { P![$A,] };
+    ($A:ty, $($tok:tt)*) => {
+        crate::bytelevel::PCons<$A, P![$($tok)*]>
+    };
+  }
+
+  #[test]
+  fn test() {
+    use crate::typic::{self, num::*, highlevel::Type, layout::Layout};
+    use crate::typic::bytelevel::slot::{bytes::kind, *};
+    use static_assertions::*;
+    use crate::bytelevel as blvl;
+
+    subsumes::<
+      P![PaddingSlot<U2>],
+      P![]
+    >();
+
+    subsumes::<
+      P![PaddingSlot<U2>],
+      P![PaddingSlot<U1>]
+    >();
+
+    subsumes::<
+      P![PaddingSlot<U1>, PaddingSlot<U1>],
+      P![PaddingSlot<U2>]
+    >();
+  }
 }
