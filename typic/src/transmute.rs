@@ -43,7 +43,8 @@ where
 
 unsafe impl<T, U> TransmuteFrom<T> for U
 where
-    U: from_type::FromType<T, Relax>,
+    T: Transparent,
+    U: Transparent + from_type::FromType<T, Relax>,
 {
     #[inline(always)]
     fn transmute_from(from: T) -> U {

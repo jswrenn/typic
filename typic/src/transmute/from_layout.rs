@@ -3,6 +3,7 @@ use crate::bytelevel::{
     slot::{bytes::kind, *},
     PCons, PNil, ReferenceBytes,
 };
+use crate::highlevel::Transparent;
 use crate::layout::{Layout, AlignedTo};
 use crate::num::{self, UInt, UTerm};
 use super::from_type::FromType;
@@ -52,27 +53,6 @@ mod bytes_to {
     /// Implemented if a byte of `TKind` is transmutable to a byte of `Self`.
     pub trait BytesFromBytes<T, M> {}
 
-    /*
-    macro_rules! from_bytes {
-      ($($TKind: path => $UKind: path,)*) => {
-        $(
-          impl<A, B, C, D, M>
-          BytesFromBytes<Bytes<$TKind, num::UInt<A, B>>, M>
-                    for Bytes<$UKind, num::UInt<C, D>>
-          {}
-        )*
-      };
-    }
-
-    from_bytes![
-      kind::NonZero       => kind::Uninitialized ,
-      kind::NonZero       => kind::Initialized   ,
-      kind::NonZero       => kind::NonZero       ,
-      kind::Initialized   => kind::Uninitialized ,
-      kind::Initialized   => kind::Initialized   ,
-      kind::Uninitialized => kind::Uninitialized ,
-    ];
-    */
     macro_rules! constrain {
       ($($TKind: path => $UKind: path,)*) => {
         $(
@@ -191,7 +171,7 @@ mod reference_to {
     where
         't: 'u,
         UK: FromMutability<TK>,
-        U: AlignedTo<T> + FromType<T, Constrain>,
+        U: Transparent + AlignedTo<T> + FromType<T, Constrain>,
     {}
 }
 

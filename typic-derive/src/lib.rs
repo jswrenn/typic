@@ -10,7 +10,7 @@ use std::cmp::{max, min};
 use syn;
 use syn::visit::Visit;
 use syn::{parse_macro_input, parse_quote};
-use syn::{Attribute, Lit, Meta, NestedMeta};
+use syn::{Attribute, Lit, Meta, NestedMeta, Visibility};
 
 #[proc_macro_attribute]
 pub fn typicrepr(_args: TokenStream, input: TokenStream) -> TokenStream {
@@ -24,6 +24,24 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
+    let all_public = definition.fields.iter().all(|field| {
+        if let Visibility::Public(_) = field.vis {
+            true
+        } else {
+            false
+        }
+    });
+
+    let transparent = if all_public {
+        quote! {
+          impl #impl_generics typic::highlevel::Transparent
+          for #name #ty_generics #where_clause
+          {}
+        }
+    } else {
+        quote! {}
+    };
+
     let mut repr = Repr::default();
     attrs
         .into_iter()
@@ -32,6 +50,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
     if let Some(Method::Transparent) = repr.method {
         return (quote! {
           #definition
+
+          #transparent
 
           impl #impl_generics typic::highlevel::Type
           for #name #ty_generics #where_clause
@@ -67,6 +87,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
         return (quote! {
           #definition
 
+          #transparent
+
           impl #impl_generics typic::highlevel::Type
           for #name #ty_generics #where_clause
           {
@@ -92,6 +114,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
     (quote! {
       #definition
+
+      #transparent
 
       impl #impl_generics typic::highlevel::Type
       for #name #ty_generics #where_clause
