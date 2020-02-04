@@ -56,3 +56,17 @@ fn padding_transmute() {
     // Transmuting padding bytes into initialized bytes is unsound.
     assert_not_impl_any!(Padded: TransmuteInto<Packed>);
 }
+
+#[test]
+fn arrays() {
+  // The inner type of the array may be mutated
+  let _: [u8; 4] = [0u16; 2].transmute_into();
+  let _: [u16; 2] = [0u8; 4].transmute_into();
+
+  // Arrays may be shrunk
+  let _: [u8; 4] = [0u8; 5].transmute_into();
+
+  // Arrays may not be grown:
+  assert_not_impl_any!([u8; 4]: TransmuteInto<[u8; 5]>);
+  assert_not_impl_any!([u8; 4]: TransmuteInto<[u16; 4]>);
+}
