@@ -1,9 +1,12 @@
 use crate::highlevel::{HighLevelOf, ReprAlignOf, ReprPackedOf, Type};
 use crate::num::Unsigned;
 
+mod aligned_to;
+
 mod into_bytelevel;
 mod padding;
 
+pub use aligned_to::AlignedTo;
 use into_bytelevel::IntoByteLevel;
 use padding::PaddingNeededForField;
 
