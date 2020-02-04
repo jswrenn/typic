@@ -1,8 +1,10 @@
 use super::IntoByteLevel;
+use crate::highlevel::{MinAlign, MaxAlign};
 use crate::bytelevel::{
-    slot::{InitializedSlot, SharedRef, UniqueRef},
+    slot::{Array, InitializedSlot, SharedRef, UniqueRef},
     NonZeroSeq, PCons, PNil, ReferenceBytes,
 };
+use crate::layout::Layout;
 use crate::highlevel::Type;
 
 use crate::num::*;
@@ -208,3 +210,66 @@ where
     #[doc(hidden)] type ReprPacked = <T as Type>::ReprPacked;
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
+
+macro_rules! array_layout {
+  ($($n: expr, $t: ty);*) => {
+    $(
+        impl<T> Type for [T; $n] {
+            #[doc(hidden)] type ReprAlign  = MinAlign;
+            #[doc(hidden)] type ReprPacked = MaxAlign;
+            #[doc(hidden)] type HighLevel = Self;
+        }
+
+        impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset>
+            for [T; $n]
+        where
+            T: Layout,
+            $t: Mul<<T as Layout>::Size>,
+
+            Offset: Add<Prod<$t, <T as Layout>::Size>>,
+            Sum<Offset, Prod<$t, <T as Layout>::Size>>: Unsigned,
+        {
+            type Output = PCons<Array<T, $t>, PNil>;
+            type Offset = Sum<Offset, Prod<$t, <T as Layout>::Size>>;
+            type Align = <T as Layout>::Align;
+        }
+    )*
+  };
+}
+
+array_layout![
+   0,  U0;
+   1,  U1;
+   2,  U2;
+   3,  U3;
+   4,  U4;
+   5,  U5;
+   6,  U6;
+   7,  U7;
+   8,  U8;
+   9,  U9;
+  10, U10;
+  11, U11;
+  12, U12;
+  13, U13;
+  14, U14;
+  15, U15;
+  16, U16;
+  17, U17;
+  18, U18;
+  19, U19;
+  20, U20;
+  21, U21;
+  22, U22;
+  23, U23;
+  24, U24;
+  25, U25;
+  26, U26;
+  27, U27;
+  28, U28;
+  29, U29;
+  30, U30;
+  31, U31;
+  32, U32
+];
+
