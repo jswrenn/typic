@@ -89,4 +89,16 @@ fn references() {
 
     // ...but you cannot increase the size:
     assert_not_impl_any!(&'static u8: TransmuteInto<&'static u16>);
+
+    // You cannot violate transparency:
+    #[typic::repr(C)]
+    #[derive(Default)]
+    pub struct A(u8);
+
+    #[typic::repr(C)]
+    #[derive(Default)]
+    pub struct B(pub u8);
+
+    assert_not_impl_any!(&'static A: TransmuteInto<&'static B>);
+    assert_not_impl_any!(&'static B: TransmuteInto<&'static A>);
 }

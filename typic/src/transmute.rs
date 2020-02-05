@@ -4,6 +4,9 @@ use core::mem;
 pub struct Relax;
 pub struct Constrain;
 
+pub struct Safe;
+pub struct Sound;
+
 #[rustfmt::skip]
 mod from_type;
 
@@ -43,13 +46,25 @@ where
 
 unsafe impl<T, U> TransmuteFrom<T> for U
 where
-    T: Transparent,
-    U: Transparent + from_type::FromType<T, Relax>,
+    U: Transparent + from_type::FromType<T, Relax, Safe>,
 {
     #[inline(always)]
     fn transmute_from(from: T) -> U {
-        unsafe { transmute(from) }
+        unsafe { transmute_safe(from) }
     }
+}
+
+/// Reinterprets the bits of a value of one type as another type.
+///
+/// This function is only callable for instances in which all possible
+/// instantiations of `T` are also bit-valid instances of `U`.
+pub fn transmute_safe<T, U>(from: T) -> U
+where
+    U: Transparent + from_type::FromType<T, Relax, Safe>,
+{
+    let to = mem::transmute_copy(&from);
+    mem::forget(from);
+    to
 }
 
 /// Reinterprets the bits of a value of one type as another type.
@@ -60,9 +75,9 @@ where
 /// It is **unsafe**, because `U` may be a user-defined type that enforces
 /// additional validity restrictions in its constructor(s). This function
 /// bypasses those restrictions, and may lead to later unsoundness.
-pub unsafe fn transmute<T, U>(from: T) -> U
+pub unsafe fn transmute_sound<T, U>(from: T) -> U
 where
-    U: from_type::FromType<T, Relax>,
+    U: from_type::FromType<T, Relax, Sound>,
 {
     let to = mem::transmute_copy(&from);
     mem::forget(from);
