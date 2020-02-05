@@ -13,7 +13,7 @@ pub(crate) mod transmute;
 pub mod highlevel;
 
 #[doc(inline)]
-pub use transmute::{transmute, TransmuteFrom, TransmuteInto};
+pub use transmute::{transmute_sound, TransmuteFrom, TransmuteInto};
 
 #[doc(inline)]
 pub use typic_derive::repr;
