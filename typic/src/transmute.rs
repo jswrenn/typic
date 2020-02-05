@@ -58,13 +58,16 @@ where
 ///
 /// This function is only callable for instances in which all possible
 /// instantiations of `T` are also bit-valid instances of `U`.
+#[inline(always)]
 pub fn transmute_safe<T, U>(from: T) -> U
 where
     U: Transparent + from_type::FromType<T, Relax, Safe>,
 {
-    let to = mem::transmute_copy(&from);
-    mem::forget(from);
-    to
+    unsafe {
+        let to = mem::transmute_copy(&from);
+        mem::forget(from);
+        to
+    }
 }
 
 /// Reinterprets the bits of a value of one type as another type.
@@ -75,6 +78,7 @@ where
 /// It is **unsafe**, because `U` may be a user-defined type that enforces
 /// additional validity restrictions in its constructor(s). This function
 /// bypasses those restrictions, and may lead to later unsoundness.
+#[inline(always)]
 pub unsafe fn transmute_sound<T, U>(from: T) -> U
 where
     U: from_type::FromType<T, Relax, Sound>,
