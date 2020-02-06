@@ -102,7 +102,7 @@ This transmute truncates away the final three bytes of the `u64` value.
 
 A value may ***not*** be transmuted into a type of greater size:
 ```rust
-let _ : u8 = u64::default().transmute_into(); // Compile Error!
+let _ : u64 = u8::default().transmute_into(); // Compile Error!
 ```
 
 
@@ -123,24 +123,30 @@ let _: &[u16; 0] = (&[0u8; 0]).transmute_into(); // Compile Error!
 #### Shrinking (or Preserving) Lifetimes
 You may transmute a reference into reference of lesser lifetime:
 ```rust
-let _: &[u8; 0] = (&'static [0u16; 0]).transmute_into();
+fn shrink<'a>() -> &'a u8 {
+    static long : &'static u8 =  &16;
+    long
+}
 ```
 
 However, you may **not** transmute a reference into a reference of greater lifetime:
 ```rust
-let _: &'static [u16; 0] = (&[0u8; 0]).transmute_into(); // Compile Error!
+fn extend<'a>(short: &'a u8) -> &'static u8 {
+    static long : &'static u8 =  &16;
+    short.transmute_into()
+}
 ```
 
 #### Shrinking (or Preserving) Mutability
 You may preserve or decrease the mutability of a reference through transmutation:
 ```rust
-let _: &u8 = (&u8).transmute_into();
-let _: &u8 = (&mut u8).transmute_into();
+let _: &u8 = (&42u8).transmute_into();
+let _: &u8 = (&mut 42u8).transmute_into();
 ```
 
 However, you may **not** transmute an immutable reference into a mutable reference:
 ```rust
-let _: &mut u8 = (&u8).transmute_into(); // Compile Error!
+let _: &mut u8 = (&42u8).transmute_into(); // Compile Error!
 ```
 
 #### Preserving Validity
@@ -148,7 +154,6 @@ Unlike transmutations of owned values, the transmutation of a reference may also
 
 ```rust
 let mut x = NonZeroU8::new(42).unwrap();
-
 {
     let y : &mut u8 = (&mut x).transmute_into(); // Compile Error!
     *y = 0;

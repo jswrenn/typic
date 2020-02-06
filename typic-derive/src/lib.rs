@@ -34,7 +34,7 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
     let transparent = if all_public {
         quote! {
-          impl #impl_generics typic::highlevel::Transparent
+          unsafe impl #impl_generics typic::Transparent
           for #name #ty_generics #where_clause
           {}
         }
@@ -53,20 +53,20 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
           #transparent
 
-          impl #impl_generics typic::highlevel::Type
+          impl #impl_generics typic::internal::Type
           for #name #ty_generics #where_clause
           {
             #[doc(hidden)]
             type ReprAlign =
-                <#name #ty_generics as typic::highlevel::Type>::ReprAlign;
+                <#name #ty_generics as typic::internal::Type>::ReprAlign;
 
             #[doc(hidden)]
             type ReprPacked =
-                <#name #ty_generics as typic::highlevel::Type>::ReprPacked;
+                <#name #ty_generics as typic::internal::Type>::ReprPacked;
 
             #[doc(hidden)]
             type HighLevel =
-                <#name #ty_generics as typic::highlevel::Type>::HighLevel;
+                <#name #ty_generics as typic::internal::Type>::HighLevel;
           }
         })
         .into();
@@ -89,11 +89,11 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
           #transparent
 
-          impl #impl_generics typic::highlevel::Type
+          impl #impl_generics typic::internal::Type
           for #name #ty_generics #where_clause
           {
-            #[doc(hidden)] type ReprAlign = typic::highlevel::#repr_align;
-            #[doc(hidden)] type ReprPacked = typic::highlevel::#repr_packed;
+            #[doc(hidden)] type ReprAlign = typic::internal::#repr_align;
+            #[doc(hidden)] type ReprPacked = typic::internal::#repr_packed;
             #[doc(hidden)] type HighLevel = Self;
           }
         })
@@ -108,8 +108,8 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
         .iter()
         .map(|field| field.ty.clone())
         .rfold(
-            quote! {typic::highlevel::PNil},
-            |rest, field| quote! {typic::highlevel::PCons<#field, #rest>},
+            quote! {typic::internal::PNil},
+            |rest, field| quote! {typic::internal::PCons<#field, #rest>},
         );
 
     (quote! {
@@ -117,11 +117,11 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
 
       #transparent
 
-      impl #impl_generics typic::highlevel::Type
+      impl #impl_generics typic::internal::Type
       for #name #ty_generics #where_clause
       {
-        #[doc(hidden)] type ReprAlign = typic::highlevel::#repr_align;
-        #[doc(hidden)] type ReprPacked = typic::highlevel::#repr_packed;
+        #[doc(hidden)] type ReprAlign = typic::internal::#repr_align;
+        #[doc(hidden)] type ReprPacked = typic::internal::#repr_packed;
         #[doc(hidden)] type HighLevel = #fields;
       }
     })

@@ -32,12 +32,41 @@ pub trait Type {
     type HighLevel;
 }
 
-/// A user-defined type is `Transparent` its validity requirements are no
-/// stricter than those of its fields.
+/// Indicates a type has no internal validity requirements.
 ///
-/// This trait is implemented automatically by `#[typic::repr(...)]` for types
-/// whose fields are all marked `pub`.
-pub trait Transparent: Type {}
+/// The `Transparent` trait is used to indicate that a compound type does not
+/// place any additional validity restrictions on its fields.
+///
+/// This trait can be implemented ***manually***:
+/// ```
+/// # use typic::docs::prelude::*;
+/// #[typic::repr(C)]
+/// pub struct Unconstrained {
+///     wizz: u8,
+///     bang: i8,
+/// }
+///
+/// unsafe impl Transparent for Unconstrained {}
+///
+/// let _ : Unconstrained = u16::default().transmute_into();
+/// ```
+///
+/// Or, ***automatically***, by marking the fields `pub`:
+/// ```
+/// # use typic::docs::prelude::*;
+/// #[typic::repr(C)]
+/// pub struct Unconstrained {
+///     pub wizz: u8,
+///     pub bang: i8,
+/// }
+///
+/// let _ : Unconstrained = u16::default().transmute_into();
+/// ```
+///
+/// If the fields are marked `pub`, the type cannot rely on any internal
+/// validity requirements, as users of the type are free to manipulate its
+/// fields via the `.` operator.
+pub unsafe trait Transparent: Type {}
 
 pub(crate) type HighLevelOf<T> = <T as Type>::HighLevel;
 pub(crate) type ReprAlignOf<T> = <T as Type>::ReprAlign;

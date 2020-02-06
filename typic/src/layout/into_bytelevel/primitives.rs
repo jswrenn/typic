@@ -19,7 +19,7 @@ macro_rules! primitive_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl Transparent for $ty {}
+            unsafe impl Transparent for $ty {}
 
             impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
             where
@@ -75,7 +75,7 @@ macro_rules! nonzero_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl Transparent for $ty {}
+            unsafe impl Transparent for $ty {}
 
             impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
             where
@@ -114,7 +114,7 @@ impl<'a, T> Type for &'a T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<'a, T> Transparent for &'a T {}
+unsafe impl<'a, T> Transparent for &'a T {}
 
 impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for &'a T
 where
@@ -133,7 +133,7 @@ impl<'a, T> Type for &'a mut T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<'a, T> Transparent for &'a mut T {}
+unsafe impl<'a, T> Transparent for &'a mut T {}
 
 impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset>
     for &'a mut T
@@ -153,7 +153,7 @@ impl<T> Type for *const T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T> Transparent for *const T {}
+unsafe impl<T> Transparent for *const T {}
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *const T
 where
@@ -172,7 +172,7 @@ impl<T> Type for *mut T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T> Transparent for *mut T {}
+unsafe impl<T> Transparent for *mut T {}
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *mut T
 where
@@ -191,7 +191,7 @@ impl<T> Type for AtomicPtr<T> {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T> Transparent for AtomicPtr<T> {}
+unsafe impl<T> Transparent for AtomicPtr<T> {}
 
 impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for AtomicPtr<T>
 where
@@ -215,7 +215,7 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<T: Type> Transparent for Cell<T> {}
+unsafe impl<T: Type> Transparent for Cell<T> {}
 
 #[rustfmt::skip]
 impl<T> Type for UnsafeCell<T>
@@ -227,7 +227,7 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<T: Type> Transparent for UnsafeCell<T> {}
+unsafe impl<T: Type> Transparent for UnsafeCell<T> {}
 
 macro_rules! array_layout {
   ($($n: expr, $t: ty);*) => {
@@ -238,7 +238,7 @@ macro_rules! array_layout {
             #[doc(hidden)] type HighLevel = Self;
         }
 
-        impl<T> Transparent for [T; $n] {}
+        unsafe impl<T> Transparent for [T; $n] {}
 
         impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset>
             for [T; $n]

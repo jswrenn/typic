@@ -1,6 +1,5 @@
 #![recursion_limit = "512"]
 
-use core::mem::align_of;
 use static_assertions::*;
 use typic::{self, TransmuteInto};
 
