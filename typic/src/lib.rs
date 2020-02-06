@@ -1,5 +1,4 @@
 #![allow(warnings)]
-#![feature(external_doc)]
 
 //! Typic helps you transmute more safely. It worries about the subtleties of
 //! [soundness] and [safety] so you don't have to!
