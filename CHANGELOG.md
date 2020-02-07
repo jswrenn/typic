@@ -5,8 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- next-header -->
-
 ## [Unreleased] - ReleaseDate
+
+## [0.2.1] - 2020-02-07
 ### Added
 - `#[no_std]` compatible.
 - [`GenericArray`](https://crates.io/crates/generic-array) support.
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Initial, prototype release.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/typic/compare/typic-v0.2.1...HEAD
+[Unreleased]: https://github.com/jswrenn/typic/compare/{{tag_name}}...HEAD
+[0.2.1]: https://github.com/typic/compare/typic-v0.2.1...{{tag_name}}
 [0.2.1]: https://github.com/jswrenn/typic/compare/typic-v0.2.0...typic-v0.2.1
 [0.2.0]: https://github.com/jswrenn/typic/releases/tag/typic-v0.2.0
