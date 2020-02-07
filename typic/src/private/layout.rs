@@ -1,5 +1,5 @@
-use crate::highlevel::{HighLevelOf, ReprAlignOf, ReprPackedOf, Type};
-use crate::num::Unsigned;
+use crate::private::highlevel::{HighLevelOf, ReprAlignOf, ReprPackedOf, Type};
+use crate::private::num::Unsigned;
 
 mod aligned_to;
 

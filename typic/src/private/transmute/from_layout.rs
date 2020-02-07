@@ -1,11 +1,11 @@
-use crate::bytelevel::{
+use crate::private::bytelevel::{
     self as blv,
     slot::{bytes::kind, *},
     PCons, PNil, ReferenceBytes,
 };
-use crate::highlevel::Transparent;
-use crate::layout::{Layout, AlignedTo};
-use crate::num::{self, UInt, UTerm};
+use crate::private::highlevel::Transparent;
+use crate::private::layout::{Layout, AlignedTo};
+use crate::private::num::{self, UInt, UTerm};
 use super::from_type::FromType;
 use super::{Relax, Constrain, Safe, Sound};
 
@@ -195,20 +195,20 @@ mod test {
   {}
 
   macro_rules! P {
-    () => { crate::bytelevel::PNil };
+    () => { crate::private::bytelevel::PNil };
     (...$Rest:ty) => { $Rest };
     ($A:ty) => { P![$A,] };
     ($A:ty, $($tok:tt)*) => {
-        crate::bytelevel::PCons<$A, P![$($tok)*]>
+        crate::private::bytelevel::PCons<$A, P![$($tok)*]>
     };
   }
 
   #[test]
   fn test() {
-    use crate::typic::{self, num::*, highlevel::Type, layout::Layout};
-    use crate::typic::bytelevel::slot::{bytes::kind, *};
+    use crate::private::{self, num::*, highlevel::Type, layout::Layout};
+    use crate::private::bytelevel::slot::{bytes::kind, *};
     use static_assertions::*;
-    use crate::bytelevel as blvl;
+    use crate::private::bytelevel as blvl;
 
     subsumes::<
       P![PaddingSlot<U2>],

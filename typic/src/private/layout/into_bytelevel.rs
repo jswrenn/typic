@@ -1,6 +1,6 @@
 //! Compute the byte-level layout from a generic representation of a type.
 
-use crate::num::{Unsigned, U0};
+use crate::private::num::{Unsigned, U0};
 
 pub mod field;
 pub mod primitives;

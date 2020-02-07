@@ -1,4 +1,4 @@
-use crate::num;
+use crate::private::num;
 
 /// Consume `Maximum<TSize, USize>` of the leading bytes of two layouts.
 pub trait Consume<TSize> {

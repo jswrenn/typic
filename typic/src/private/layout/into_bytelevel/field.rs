@@ -1,6 +1,6 @@
-use crate::bytelevel::{slot::PaddingSlot, PCons};
-use crate::layout::{Layout, PaddingNeededForField};
-use crate::num::{self, Unsigned};
+use crate::private::bytelevel::{slot::PaddingSlot, PCons};
+use crate::private::layout::{Layout, PaddingNeededForField};
+use crate::private::num::{self, Unsigned};
 
 pub trait FieldIntoByteLevel<Packed, Offset> {
     /// The padded, byte-level representation of `Self`.

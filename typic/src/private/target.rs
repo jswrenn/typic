@@ -1,6 +1,6 @@
 //! Type-level information about the compilation target.
 
-use crate::num::*;
+use crate::private::num::*;
 
 /// The pointer width, in bytes, of the target platform.
 #[cfg(target_pointer_width = "8")]

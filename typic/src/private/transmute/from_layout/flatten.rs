@@ -1,7 +1,7 @@
-use crate::num;
+use crate::private::num;
 
-use crate::layout::Layout;
-use crate::bytelevel::{self as blv, slot::Array, PCons};
+use crate::private::layout::Layout;
+use crate::private::bytelevel::{self as blv, slot::Array, PCons};
 
 pub trait Flatten {
     type Output;

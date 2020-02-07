@@ -3,7 +3,7 @@
 pub mod coproduct;
 pub mod product;
 
-use crate::num::Unsigned;
+use crate::private::num::Unsigned;
 
 #[doc(hidden)]
 pub use typenum::consts::*;

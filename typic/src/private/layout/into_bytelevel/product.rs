@@ -1,9 +1,9 @@
 //! Compute the byte-level layout of a product type.
 use super::field::FieldIntoByteLevel;
-use crate::bytelevel::{self, slot::PaddingSlot};
-use crate::highlevel;
-use crate::layout::{padding::PadTo, IntoByteLevel};
-use crate::num::{self, Unsigned};
+use crate::private::bytelevel::{self, slot::PaddingSlot};
+use crate::private::highlevel;
+use crate::private::layout::{padding::PadTo, IntoByteLevel};
+use crate::private::num::{self, Unsigned};
 
 #[rustfmt::skip]
 impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for highlevel::PNil

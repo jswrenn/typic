@@ -118,30 +118,30 @@ pub mod docs {
 #[deprecated(note = "TODO")]
 pub enum TODO {}
 
-pub(crate) mod bytelevel;
-pub(crate) mod layout;
-pub(crate) mod num;
-pub(crate) mod target;
-pub(crate) mod transmute;
+pub(crate) mod private {
+    pub(crate) mod bytelevel;
+    pub(crate) mod layout;
+    pub(crate) mod num;
+    pub(crate) mod target;
+    pub(crate) mod transmute;
+    pub mod highlevel;
+}
 
 #[doc(hidden)]
-pub mod highlevel;
+pub use private::highlevel as internal;
 
 #[doc(inline)]
-pub use highlevel as internal;
+pub use private::highlevel::Transparent;
 
 #[doc(inline)]
-pub use highlevel::Transparent;
-
-#[doc(inline)]
-pub use transmute::{transmute_safe, transmute_sound, TransmuteFrom, TransmuteInto};
+pub use private::transmute::{transmute_safe, transmute_sound, TransmuteFrom, TransmuteInto};
 
 /// Use `#[typic::repr(...)]` instead of `#[repr(...)]` on your type definitions.
 #[doc(inline)]
 pub use typic_derive::repr;
 
 mod typic {
-    pub use crate::*;
+    pub use super::*;
 }
 
 /// Guidance and tools for ***safe*** transmutation.
@@ -469,3 +469,5 @@ pub mod safe {
 pub mod sound {
     pub use crate::transmute_sound;
 }
+
+

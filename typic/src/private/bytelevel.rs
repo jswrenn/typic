@@ -8,8 +8,8 @@ pub mod slot;
 pub use ops::{Add, Sum};
 pub use product::{Cons as PCons, Nil as PNil};
 
-use crate::num::{Sub1, U1};
-use crate::target::PointerWidth;
+use crate::private::num::{Sub1, U1};
+use crate::private::target::PointerWidth;
 
 #[cfg(target_endian = "little")]
 pub type NonZeroSeq<S, Rest> =

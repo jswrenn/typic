@@ -1,5 +1,5 @@
 use super::Layout;
-use crate::num::*;
+use crate::private::num::*;
 
 pub trait AlignedTo<T> {}
 

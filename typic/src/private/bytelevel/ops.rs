@@ -1,8 +1,8 @@
 //! Type-level operations on byte-level stuff.
 
-use crate::bytelevel::slot::*;
-use crate::bytelevel::{product::Product, PCons, PNil};
-use crate::num;
+use crate::private::bytelevel::slot::*;
+use crate::private::bytelevel::{product::Product, PCons, PNil};
+use crate::private::num;
 
 pub trait Add<RHS> {
     type Output;

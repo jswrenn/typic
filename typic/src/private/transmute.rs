@@ -1,4 +1,4 @@
-use crate::highlevel::Transparent;
+use crate::private::highlevel::Transparent;
 use core::mem;
 
 pub struct Relax;

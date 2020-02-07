@@ -1,5 +1,5 @@
 use super::{Relax, Constrain, Safe, Sound};
-use crate::layout::Layout;
+use crate::private::layout::Layout;
 use super::from_layout::FromLayout;
 
 /// A marker trait implemented if every instance of `T` is transmutable into

@@ -2,7 +2,7 @@
 
 use core::mem::align_of;
 use static_assertions::*;
-use typic::{self, highlevel::*};
+use typic::{self, internal::*};
 
 mod zst {
     use super::*;

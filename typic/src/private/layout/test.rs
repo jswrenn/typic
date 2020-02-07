@@ -1,7 +1,7 @@
 use super::Layout;
-use crate::bytelevel::{self as blvl, slot::*};
-use crate::highlevel::{self as hlvl, MaxAlign, MinAlign, Type};
-use crate::num::*;
+use crate::private::bytelevel::{self as blvl, slot::*};
+use crate::private::highlevel::{self as hlvl, MaxAlign, MinAlign, Type};
+use crate::private::num::*;
 use crate::typic;
 use static_assertions::*;
 

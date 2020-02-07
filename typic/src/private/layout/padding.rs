@@ -1,5 +1,5 @@
 use super::Layout;
-use crate::num::*;
+use crate::private::num::*;
 
 /// The amount of padding, counted in bytes, that must preceed `Self` in a
 /// compound type, where `Offset` is the index of the byte following the end of

@@ -1,14 +1,14 @@
 use super::IntoByteLevel;
-use crate::bytelevel::{
+use crate::private::bytelevel::{
     slot::{Array, InitializedSlot, SharedRef, UniqueRef},
     NonZeroSeq, PCons, PNil, ReferenceBytes,
 };
-use crate::highlevel::{MaxAlign, MinAlign};
-use crate::highlevel::{Transparent, Type};
-use crate::layout::Layout;
+use crate::private::highlevel::{MaxAlign, MinAlign};
+use crate::private::highlevel::{Transparent, Type};
+use crate::private::layout::Layout;
 
-use crate::num::*;
-use crate::target::PointerWidth;
+use crate::private::num::*;
+use crate::private::target::PointerWidth;
 
 macro_rules! primitive_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
