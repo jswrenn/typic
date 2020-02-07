@@ -1,6 +1,6 @@
 [package]
 name = "typic-derive"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Jack Wrenn <me@jswrenn.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
