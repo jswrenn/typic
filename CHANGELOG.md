@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased] - ReleaseDate
 ### Added
 - `#[no_std]` compatible.
+- [`GenericArray`](https://crates.io/crates/generic-array) support.
 
 ## [0.2.1] - 2020-02-06
 ### Fixed

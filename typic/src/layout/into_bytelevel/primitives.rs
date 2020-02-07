@@ -292,3 +292,34 @@ array_layout![
   31, U31;
   32, U32
 ];
+
+use generic_array::{GenericArray, ArrayLength};
+
+impl<T, N> Type for GenericArray<T, N>
+where
+    N: ArrayLength<T>,
+{
+    #[doc(hidden)] type ReprAlign  = MinAlign;
+    #[doc(hidden)] type ReprPacked = MaxAlign;
+    #[doc(hidden)] type HighLevel = Self;
+}
+
+unsafe impl<T, N> Transparent for GenericArray<T, N>
+where
+    N: ArrayLength<T>,
+{}
+
+impl<ReprAlign, ReprPacked, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Offset>
+    for GenericArray<T, N>
+where
+    T: Layout,
+    N: ArrayLength<T>,
+    N: Mul<<T as Layout>::Size>,
+
+    Offset: Add<Prod<N, <T as Layout>::Size>>,
+    Sum<Offset, Prod<N, <T as Layout>::Size>>: Unsigned,
+{
+    type Output = PCons<Array<T, N>, PNil>;
+    type Offset = Sum<Offset, Prod<N, <T as Layout>::Size>>;
+    type Align = <T as Layout>::Align;
+}
