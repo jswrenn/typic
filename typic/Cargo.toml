@@ -10,7 +10,6 @@ readme = "../README.md"
 categories = ["rust-patterns"]
 
 [dependencies]
-static_assertions = "1.1.0"
 typenum = "1.10.0"
 typic-derive = { version = "^0.2.0", path = "../typic-derive" }
 
