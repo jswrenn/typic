@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- `#[no_std]` compatible.
 
 ## [0.2.1] - 2020-02-06
 ### Fixed

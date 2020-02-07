@@ -1,3 +1,4 @@
+#![no_std]
 #![allow(warnings)]
 
 //! Typic helps you transmute more safely. It worries about the subtleties of

@@ -7,7 +7,7 @@ license = "MIT/Apache-2.0"
 repository = "https://github.com/jswrenn/typic"
 description = "Type-safe transmutations between layout-compatible types."
 readme = "../README.md"
-categories = ["rust-patterns"]
+categories = ["rust-patterns", "no-std"]
 
 [dependencies]
 typenum = "1.10.0"
