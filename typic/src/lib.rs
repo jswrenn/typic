@@ -472,13 +472,59 @@ pub mod sound {
 
 /// Details about the layout of types.
 ///
-/// Useful for building your own abstractions over Typic.
+/// [`SizeOf`]: crate::layout::SizeOf
+/// [`zerocopy`]: https://crates.io/crates/zerocopy
+/// [`AsBytes`]: https://docs.rs/zerocopy/0.2.*/zerocopy/trait.AsBytes.html
+/// [`FromBytes`]: https://docs.rs/zerocopy/0.2.*/zerocopy/trait.FromBytes.html
+/// [`Unaligned`]: https://docs.rs/zerocopy/0.2.*/zerocopy/trait.Unaligned.html
+///
+/// Useful for building your own abstractions over Typic. For instance, we can
+/// use [`SizeOf`] to implement [`zerocopy`]'s [`FromBytes`], [`AsBytes`] and
+/// [`Unaligned`] marker traits:
+///
+/// ```
+/// use typic::{layout::{Layout, SizeOf}, TransmuteInto, TransmuteFrom};
+/// use generic_array::{ArrayLength as Length, GenericArray as Array};
+/// use typenum::U1;
+/// 
+/// /// Indicates `Self` can be produced from an
+/// /// appropriately-sized array of arbitrarily
+/// /// initialized bytes.
+/// pub trait FromBytes {}
+/// 
+/// impl<T> FromBytes for T
+/// where
+///     T: Layout,
+///     SizeOf<T>: Length<u8>,
+///     T: TransmuteFrom<Array<u8, SizeOf<T>>>
+/// {}
+/// 
+/// /// Indicates `Self` can be converted into an
+/// /// appropriately-sized array of arbitrarily
+/// /// initialized bytes.
+/// pub trait AsBytes {}
+/// 
+/// impl<T> AsBytes for T
+/// where
+///     T: Layout,
+///     SizeOf<T>: Length<u8>,
+///     T: TransmuteInto<Array<u8, SizeOf<T>>>
+/// {}
+///
+/// /// Indicates `Self` has no alignment requirement.
+/// pub trait Unaligned {}
+///
+/// impl<T> Unaligned for T
+/// where
+///     T: Layout<Align=U1>,
+/// {}
+/// ```
 pub mod layout {
     use crate::private::{layout, num};
 
     /// Type-level information about type representation.
     pub trait Layout {
-        /// The size of `Self`
+        /// The size of `Self`.
         ///
         /// ```
         /// use typenum::*;
