@@ -1,8 +1,8 @@
 #![no_std]
 #![allow(warnings)]
 
-//! Typic helps you transmute more safely. It worries about the subtleties of
-//! [soundness] and [safety] so you don't have to!
+//! Typic helps you transmute fearlessly. It worries about the subtleties of
+//! ***[soundness]*** and ***[safety]*** so you don't have to!
 //!
 //! Just import it and replace your `#[repr(...)]` attributes with `#[typic::repr(...)]`:
 //! ```
@@ -14,13 +14,13 @@
 //! pub struct Foo(pub u8, pub u16);
 //!
 //! // Transmute fearlessly!
-//! let _ : Foo = u32::default().transmute_into(); // Alchemy achieved!
+//! let _ : Foo = 64u32.transmute_into(); // Alchemy achieved!
 //! ```
 //! ```compile_fail
 //! # use typic::{self, TransmuteInto};
 //! # #[typic::repr(C)]
 //! # struct Foo(pub u8, pub u16);
-//! let _ : u32 = Foo::default().transmute_into(); // Compiler Error!
+//! let _ : u32 = Foo(16, 12).transmute_into(); // Compiler Error!
 //! ```
 //!
 //! [soundness]: crate::sound#when-is-a-transmutation-sound
@@ -190,7 +190,7 @@ mod typic {
 /// }
 /// ```
 ///
-/// It is [sound][soundness] to transmute in instance of `Unconstrained` into
+/// It is [sound][soundness] to transmute an instance of `Unconstrained` into
 /// `Constrained`:
 /// ```
 /// use typic::docs::prelude::*;

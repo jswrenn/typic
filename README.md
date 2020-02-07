@@ -1,9 +1,26 @@
 # Typic
-
-Type-safe transmutations between layout-compatible types. See `./typic/tests/` for usage examples. **Note: This is a minimally viable proof-of-concept and it not suitable for real-world use.**
+Typic helps you transmute fearlessly. It worries about the subtleties of
+***[soundness]*** and ***[safety]*** so you don't have to!
 
 [![Documentation](https://docs.rs/typic/badge.svg)](https://docs.rs/typic/)
 [![Crates.io](https://img.shields.io/crates/v/typic.svg)](https://crates.io/crates/typic/0.1.0)
+
+Just import it and replace your `#[repr(...)]` attributes with `#[typic::repr(...)]`:
+```rust
+// Import it!
+use typic::{self, TransmuteInto};
+
+// Update your attributes!
+#[typic::repr(C)]
+pub struct Foo(pub u8, pub u16);
+
+// Transmute fearlessly!
+let _ : Foo = u32::default().transmute_into(); // Alchemy achieved!
+let _ : u32 = Foo::default().transmute_into(); // Compiler Error!
+```
+
+[soundness]: https://docs.rs/typic/latest/typic/sound/
+[safety]: https://docs.rs/typic/latest/typic/safe/
 
 #### License
 
