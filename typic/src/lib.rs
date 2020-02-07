@@ -120,11 +120,11 @@ pub enum TODO {}
 
 pub(crate) mod private {
     pub(crate) mod bytelevel;
+    pub mod highlevel;
     pub(crate) mod layout;
     pub(crate) mod num;
     pub(crate) mod target;
     pub(crate) mod transmute;
-    pub mod highlevel;
 }
 
 #[doc(hidden)]
@@ -470,4 +470,64 @@ pub mod sound {
     pub use crate::transmute_sound;
 }
 
+/// Details about the layout of types.
+///
+/// Useful for building your own abstractions over Typic.
+pub mod layout {
+    use crate::private::{layout, num};
 
+    /// Type-level information about type representation.
+    pub trait Layout {
+        /// The size of `Self`
+        ///
+        /// ```
+        /// use typenum::*;
+        /// use static_assertions::*;
+        /// use typic::layout::Layout;
+        ///
+        /// assert_type_eq_all!(U4, <[u16; 2] as Layout>::Size);
+        /// ```
+        type Size: num::Unsigned;
+
+        /// The minimum alignment of `Self`.
+        ///
+        /// ```
+        /// use typenum::*;
+        /// use static_assertions::*;
+        /// use typic::layout::Layout;
+        ///
+        /// assert_type_eq_all!(U2, <[u16; 2] as Layout>::Align);
+        /// ```
+        type Align: num::Unsigned;
+    }
+
+    impl<T> Layout for T
+    where
+        T: layout::Layout,
+    {
+        type Size = <T as layout::Layout>::Size;
+        type Align = <T as layout::Layout>::Align;
+    }
+
+    /// Get the size of `T` (if `T: Layout`).
+    ///
+    /// ```
+    /// use typenum::*;
+    /// use static_assertions::*;
+    /// use typic::layout::SizeOf;
+    ///
+    /// assert_type_eq_all!(U4, SizeOf<[u16; 2]>);
+    /// ```
+    pub type SizeOf<T> = <T as Layout>::Size;
+
+    /// Get the minimum alignment of `T` (if `T: Layout`).
+    ///
+    /// ```
+    /// use typenum::*;
+    /// use static_assertions::*;
+    /// use typic::layout::AlignOf;
+    ///
+    /// assert_type_eq_all!(U2, AlignOf<[u16; 2]>);
+    /// ```
+    pub type AlignOf<T> = <T as Layout>::Align;
+}

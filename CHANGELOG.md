@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - `#[no_std]` compatible.
 - [`GenericArray`](https://crates.io/crates/generic-array) support.
+- Expose `layout` module providing some of typic's type-level information about
+  types (namely: size and minimum alignment).
 
 ## [0.2.1] - 2020-02-06
 ### Fixed
