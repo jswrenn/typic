@@ -22,6 +22,20 @@ pub unsafe trait FromLayout<T, M, S> {}
 /// ANYTHING -> []
 unsafe impl<T, M, S> FromLayout<T, M, S> for PNil {}
 
+#[rustfmt::skip] unsafe impl<UKind, URest, M, S>
+FromLayout<PNil, M, S>
+       for PCons<Bytes<UKind, UTerm>, URest>
+where
+    URest: FromLayout<PNil, M, S>,
+{}
+
+#[rustfmt::skip] unsafe impl<U, URest, M, S>
+FromLayout<PNil, M, S>
+       for PCons<Array<U, UTerm>, URest>
+where
+    URest: FromLayout<PNil, M, S>,
+{}
+
 mod bytes_to {
     use super::*;
 
