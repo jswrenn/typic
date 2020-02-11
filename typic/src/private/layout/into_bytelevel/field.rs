@@ -16,10 +16,17 @@ pub trait FieldIntoByteLevel<Packed, Offset> {
 impl<Packed, Offset, F> FieldIntoByteLevel<Packed, Offset> for F
 where
     F: Layout + PaddingNeededForField<Offset, Packed>,
-    Offset: num::Add<<F as Layout>::Size>,
-    Packed: num::Min<<F as Layout>::Align>,
+    Offset: num::Add<<F as PaddingNeededForField<Offset, Packed>>::Output>,
 
-    num::Sum<Offset, <F as Layout>::Size>: Unsigned,
+    num::Sum<Offset, <F as PaddingNeededForField<Offset, Packed>>::Output>:
+      num::Add<<F as Layout>::Size>,
+
+    num::Sum<
+      num::Sum<Offset, <F as PaddingNeededForField<Offset, Packed>>::Output>,
+      <F as Layout>::Size
+    >: Unsigned,
+
+    Packed: num::Min<<F as Layout>::Align>,
     num::Minimum<Packed, <F as Layout>::Align>: Unsigned,
 {
     type Output = PCons<
@@ -27,7 +34,10 @@ where
         <F as Layout>::ByteLevel,
     >;
 
-    type Offset = num::Sum<Offset, <F as Layout>::Size>;
+    type Offset = num::Sum<
+      num::Sum<Offset, <F as PaddingNeededForField<Offset, Packed>>::Output>,
+      <F as Layout>::Size
+    >;
 
     type Align = num::Minimum<Packed, <F as Layout>::Align>;
 }
