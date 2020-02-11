@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.2.3] - 2020-02-11
 ### Fixed
 - fix `bytelevel::Product` append operation
 - count padding bytes in field size
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- next-url -->
 [Unreleased]: https://github.com/jswrenn/typic/compare/{{tag_name}}...HEAD
+[0.2.3]: https://github.com/jswrenn/typic/compare/{{tag_name}}...{{tag_name}}
 [0.2.2]: https://github.com/typic/compare/typic-v0.2.1...{{tag_name}}
 [0.2.1]: https://github.com/jswrenn/typic/compare/typic-v0.2.0...typic-v0.2.1
 [0.2.0]: https://github.com/jswrenn/typic/releases/tag/typic-v0.2.0
