@@ -32,9 +32,15 @@ impl<P: Product> Add<PNil> for P {
     type Output = Self;
 }
 
-impl<RH, RT, P: Product> Add<PCons<RH, RT>> for P
+impl<RH, RT> Add<PCons<RH, RT>> for PNil
 where
-    RT: Add<Self>,
 {
-    type Output = PCons<RH, <RT as Add<Self>>::Output>;
+    type Output = PCons<RH, RT>;
+}
+
+impl<RH, RT, LH, LT> Add<PCons<RH, RT>> for PCons<LH, LT>
+where
+    LT: Add<PCons<RH, RT>>,
+{
+    type Output = PCons<LH, <LT as Add<PCons<RH, RT>>>::Output>;
 }
