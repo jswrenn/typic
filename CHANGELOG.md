@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- fix `bytelevel::Product` append operation
+- count padding bytes in field size
+- handling of `PNil→[{Bytes,Array}<_, U0>|...]`
 
 ## [0.2.2] - 2020-02-07
 ### Added
