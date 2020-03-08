@@ -2,11 +2,15 @@
 
 pub mod coproduct;
 pub mod product;
+pub mod field;
 
 use crate::private::num::Unsigned;
 
 #[doc(hidden)]
 pub use typenum::consts::*;
+
+#[doc(inline)]
+pub use field::{Field, Public, Private};
 
 #[doc(inline)]
 pub use coproduct::{Cons as CCons, Nil as CNil};
@@ -31,42 +35,6 @@ pub trait Type {
     /// An abstract representation of the type's structure.
     type HighLevel;
 }
-
-/// Indicates a type has no internal validity requirements.
-///
-/// The `Transparent` trait is used to indicate that a compound type does not
-/// place any additional validity restrictions on its fields.
-///
-/// This trait can be implemented ***manually***:
-/// ```
-/// # use typic::docs::prelude::*;
-/// #[typic::repr(C)]
-/// pub struct Unconstrained {
-///     wizz: u8,
-///     bang: i8,
-/// }
-///
-/// unsafe impl Transparent for Unconstrained {}
-///
-/// let _ : Unconstrained = u16::default().transmute_into();
-/// ```
-///
-/// Or, ***automatically***, by marking the fields `pub`:
-/// ```
-/// # use typic::docs::prelude::*;
-/// #[typic::repr(C)]
-/// pub struct Unconstrained {
-///     pub wizz: u8,
-///     pub bang: i8,
-/// }
-///
-/// let _ : Unconstrained = u16::default().transmute_into();
-/// ```
-///
-/// If the fields are marked `pub`, the type cannot rely on any internal
-/// validity requirements, as users of the type are free to manipulate its
-/// fields via the `.` operator.
-pub unsafe trait Transparent: Type {}
 
 pub(crate) type HighLevelOf<T> = <T as Type>::HighLevel;
 pub(crate) type ReprAlignOf<T> = <T as Type>::ReprAlign;

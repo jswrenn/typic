@@ -5,10 +5,10 @@ use core::marker::PhantomData;
 pub struct Shared;
 pub struct Unique;
 
-pub struct Reference<'a, K, T>(PhantomData<(K, &'a T)>);
+pub struct Reference<'a, Visibility, K, T>(PhantomData<(Visibility, K, &'a T)>);
 
 /// A unique reference to a type `T` with lifetime `'a`.
-pub type UniqueRef<'a, T> = Reference<'a, Unique, T>;
+pub type UniqueRef<'a, Visibility, T> = Reference<'a, Visibility, Unique, T>;
 
 /// A shared reference to a type `T` with lifetime `'a`.
-pub type SharedRef<'a, T> = Reference<'a, Shared, T>;
+pub type SharedRef<'a, Visibility, T> = Reference<'a, Visibility, Shared, T>;

@@ -1,10 +1,11 @@
+use crate::StableABI;
 use super::IntoByteLevel;
 use crate::private::bytelevel::{
     slot::{Array, InitializedSlot, SharedRef, UniqueRef},
     NonZeroSeq, PCons, PNil, ReferenceBytes,
 };
 use crate::private::highlevel::{MaxAlign, MinAlign};
-use crate::private::highlevel::{Transparent, Type};
+use crate::private::highlevel::Type;
 use crate::private::layout::Layout;
 
 use crate::private::num::*;
@@ -19,14 +20,14 @@ macro_rules! primitive_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            unsafe impl Transparent for $ty {}
+            impl StableABI for $ty {}
 
-            impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
+            impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for $ty
             where
                 Offset: Add<$size>,
                 Sum<Offset, $size>: Unsigned,
             {
-                type Output = PCons<InitializedSlot<$size>, PNil>;
+                type Output = PCons<InitializedSlot<Visibility, $size>, PNil>;
                 type Offset = Sum<Offset, $size>;
                 type Align  = $align;
             }
@@ -75,14 +76,14 @@ macro_rules! nonzero_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            unsafe impl Transparent for $ty {}
+            impl StableABI for $ty {}
 
-            impl<ReprAlign, ReprPacked, Offset> IntoByteLevel<ReprAlign, ReprPacked, Offset> for $ty
+            impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for $ty
             where
                 Offset: Add<$size>,
                 Sum<Offset, $size>: Unsigned,
             {
-                type Output = NonZeroSeq<$size, PNil>;
+                type Output = NonZeroSeq<Visibility, $size, PNil>;
                 type Offset = Sum<Offset, $size>;
                 type Align  = $align;
             }
@@ -108,23 +109,44 @@ nonzero_layout! {
 }
 
 #[rustfmt::skip]
+impl Type for () {
+    #[doc(hidden)] type ReprAlign  = PointerWidth;
+    #[doc(hidden)] type ReprPacked = PointerWidth;
+    #[doc(hidden)] type HighLevel = Self;
+}
+
+impl StableABI for () {}
+
+impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for ()
+where
+    Offset: Unsigned,
+    PointerWidth: Unsigned,
+{
+    type Output = PNil;
+    type Offset = Offset;
+    type Align = PointerWidth;
+}
+
+impl<'a, T> StableABI for &'a T {}
+
+#[rustfmt::skip]
 impl<'a, T> Type for &'a T {
     #[doc(hidden)] type ReprAlign  = PointerWidth;
     #[doc(hidden)] type ReprPacked = PointerWidth;
     #[doc(hidden)] type HighLevel = Self;
 }
 
-unsafe impl<'a, T> Transparent for &'a T {}
-
-impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for &'a T
+impl<'a, ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for &'a T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
 {
-    type Output = PCons<SharedRef<'a, T>, PNil>;
+    type Output = PCons<SharedRef<'a, Visibility, T>, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
     type Align = PointerWidth;
 }
+
+impl<'a, T> StableABI for &'a mut T {}
 
 #[rustfmt::skip]
 impl<'a, T> Type for &'a mut T {
@@ -133,18 +155,18 @@ impl<'a, T> Type for &'a mut T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-unsafe impl<'a, T> Transparent for &'a mut T {}
-
-impl<'a, ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset>
+impl<'a, ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
     for &'a mut T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
 {
-    type Output = PCons<UniqueRef<'a, T>, PNil>;
+    type Output = PCons<UniqueRef<'a, Visibility, T>, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
     type Align = PointerWidth;
 }
+
+impl<T> StableABI for *const T {}
 
 #[rustfmt::skip]
 impl<T> Type for *const T {
@@ -153,17 +175,17 @@ impl<T> Type for *const T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-unsafe impl<T> Transparent for *const T {}
-
-impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *const T
+impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for *const T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
 {
-    type Output = ReferenceBytes<PNil>;
+    type Output = ReferenceBytes<Visibility, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
     type Align = PointerWidth;
 }
+
+impl<T> StableABI for *mut T {}
 
 #[rustfmt::skip]
 impl<T> Type for *mut T {
@@ -172,14 +194,12 @@ impl<T> Type for *mut T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-unsafe impl<T> Transparent for *mut T {}
-
-impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for *mut T
+impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for *mut T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
 {
-    type Output = ReferenceBytes<PNil>;
+    type Output = ReferenceBytes<Visibility, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
     type Align = PointerWidth;
 }
@@ -191,14 +211,14 @@ impl<T> Type for AtomicPtr<T> {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-unsafe impl<T> Transparent for AtomicPtr<T> {}
+impl<T> StableABI for AtomicPtr<T> {}
 
-impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset> for AtomicPtr<T>
+impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for AtomicPtr<T>
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
 {
-    type Output = ReferenceBytes<PNil>;
+    type Output = ReferenceBytes<Visibility, PNil>;
     type Offset = Sum<Offset, PointerWidth>;
     type Align = PointerWidth;
 }
@@ -215,7 +235,7 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-unsafe impl<T: Type> Transparent for Cell<T> {}
+impl<T> StableABI for Cell<T> {}
 
 #[rustfmt::skip]
 impl<T> Type for UnsafeCell<T>
@@ -227,7 +247,7 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-unsafe impl<T: Type> Transparent for UnsafeCell<T> {}
+impl<T> StableABI for UnsafeCell<T> {}
 
 macro_rules! array_layout {
   ($($n: expr, $t: ty);*) => {
@@ -238,20 +258,20 @@ macro_rules! array_layout {
             #[doc(hidden)] type HighLevel = Self;
         }
 
-        unsafe impl<T> Transparent for [T; $n] {}
+        impl<T> StableABI for [T; $n] {}
 
-        impl<ReprAlign, ReprPacked, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Offset>
+        impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
             for [T; $n]
         where
-            T: Layout,
-            $t: Mul<<T as Layout>::Size>,
+            T: Layout<Visibility>,
+            $t: Mul<<T as Layout<Visibility>>::Size>,
 
-            Offset: Add<Prod<$t, <T as Layout>::Size>>,
-            Sum<Offset, Prod<$t, <T as Layout>::Size>>: Unsigned,
+            Offset: Add<Prod<$t, <T as Layout<Visibility>>::Size>>,
+            Sum<Offset, Prod<$t, <T as Layout<Visibility>>::Size>>: Unsigned,
         {
-            type Output = PCons<Array<T, $t>, PNil>;
-            type Offset = Sum<Offset, Prod<$t, <T as Layout>::Size>>;
-            type Align = <T as Layout>::Align;
+            type Output = PCons<Array<Visibility, T, $t>, PNil>;
+            type Offset = Sum<Offset, Prod<$t, <T as Layout<Visibility>>::Size>>;
+            type Align = <T as Layout<Visibility>>::Align;
         }
     )*
   };
@@ -304,22 +324,22 @@ where
     #[doc(hidden)] type HighLevel = Self;
 }
 
-unsafe impl<T, N> Transparent for GenericArray<T, N>
+impl<T, N> StableABI for GenericArray<T, N>
 where
     N: ArrayLength<T>,
 {}
 
-impl<ReprAlign, ReprPacked, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Offset>
+impl<ReprAlign, ReprPacked, Visibility, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
     for GenericArray<T, N>
 where
-    T: Layout,
+    T: Layout<Visibility>,
     N: ArrayLength<T>,
-    N: Mul<<T as Layout>::Size>,
+    N: Mul<<T as Layout<Visibility>>::Size>,
 
-    Offset: Add<Prod<N, <T as Layout>::Size>>,
-    Sum<Offset, Prod<N, <T as Layout>::Size>>: Unsigned,
+    Offset: Add<Prod<N, <T as Layout<Visibility>>::Size>>,
+    Sum<Offset, Prod<N, <T as Layout<Visibility>>::Size>>: Unsigned,
 {
-    type Output = PCons<Array<T, N>, PNil>;
-    type Offset = Sum<Offset, Prod<N, <T as Layout>::Size>>;
-    type Align = <T as Layout>::Align;
+    type Output = PCons<Array<Visibility, T, N>, PNil>;
+    type Offset = Sum<Offset, Prod<N, <T as Layout<Visibility>>::Size>>;
+    type Align = <T as Layout<Visibility>>::Align;
 }

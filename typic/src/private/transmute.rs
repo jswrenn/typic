@@ -1,17 +1,40 @@
-use crate::private::highlevel::Transparent;
 use core::mem;
 
-pub struct Relax;
-pub struct Constrain;
+/// Allow bit-validity to expand.
+pub struct Variant;
+/// Constrain bit-validity to be equal.
+pub struct Invariant;
 
-pub struct Safe;
-pub struct Sound;
+/// Alignment of pointers is statically checked.
+pub struct Static;
+/// Alignment of pointers is unchecked.
+pub struct Unchecked;
+
+/// Transparency is enforced.
+pub struct Enforced;
+/// Transparency is not enforced.
+pub struct Unenforced;
+
+pub mod neglect;
 
 #[rustfmt::skip]
-mod from_type;
+pub mod from_type;
 
 #[rustfmt::skip]
-mod from_layout;
+pub mod from_layout;
+
+/// The source and destination types **must** have
+/// [stable ABIs][crate::marker::StableABI].
+pub struct Stable;
+
+/// The source and destination types **may not** both have
+/// [stable ABIs][crate::marker::StableABI].
+///
+/// A transmutation between types with unstable ABIs is not necessarily
+/// unsafe, but the creators of the source and destination types do **not**
+/// guarantee that those types will have the same size, alignment, or
+/// data arrangement across minor releases.
+pub struct Unstable;
 
 /// A ***safe*** and ***sound*** value-to-value conversion.
 /// The opposite of [`TransmuteFrom`].
@@ -26,9 +49,41 @@ mod from_layout;
 /// [`transmute_safe`]: crate::transmute_safe
 /// [soundness]: crate::sound#when-is-a-transmutation-sound
 /// [safety]: crate::safe
-pub unsafe trait TransmuteInto<U>: Sized {
+pub unsafe trait TransmuteInto<U, O = ()>: Sized
+where
+    O: neglect::Options,
+{
     /// Reinterprets the bits of `self` as type `U`.
     fn transmute_into(self) -> U;
+}
+
+unsafe impl<T, U, O> TransmuteInto<U, O> for T
+where
+    U: TransmuteFrom<T, O>,
+    O: neglect::Options,
+{
+    #[inline(always)]
+    fn transmute_into(self) -> U {
+        U::transmute_from(self)
+    }
+}
+
+/// For ergonomics, until [rust-lang/rust#27336] is resolved.
+///
+/// [rust-lang/rust#27336]: https://github.com/rust-lang/rust/issues/27336
+pub trait StableTransmuteInto<U>: TransmuteInto<U> {
+    fn transmute_into(self) -> U;
+}
+
+impl<T, U> StableTransmuteInto<U> for T
+where
+    T: TransmuteInto<U>,
+{
+    #[inline(always)]
+    fn transmute_into(self) -> U
+    {
+        self.transmute_into()
+    }
 }
 
 /// A ***safe*** and ***sound*** value-to-value conversion.
@@ -44,28 +99,47 @@ pub unsafe trait TransmuteInto<U>: Sized {
 /// [`transmute_safe`]: crate::transmute_safe
 /// [soundness]: crate::sound#when-is-a-transmutation-sound
 /// [safety]: crate::safe
-pub unsafe trait TransmuteFrom<T>: Sized {
+pub unsafe trait TransmuteFrom<T, O = ()>: Sized
+where
+    O: neglect::Options,
+{
     /// Reinterprets the bits of `from` as type `Self`.
     fn transmute_from(from: T) -> Self;
 }
 
-unsafe impl<T, U> TransmuteInto<U> for T
+unsafe impl<T, U, O> TransmuteFrom<T, O> for U
 where
-    U: TransmuteFrom<T>,
-{
-    #[inline(always)]
-    fn transmute_into(self) -> U {
-        U::transmute_from(self)
-    }
-}
-
-unsafe impl<T, U> TransmuteFrom<T> for U
-where
-    U: Transparent + from_type::FromType<T, Relax, Safe>,
+    U: UnsafeTransmuteFrom<T, O>,
+    O: neglect::Options,
 {
     #[inline(always)]
     fn transmute_from(from: T) -> U {
-        unsafe { transmute_safe(from) }
+        unsafe { U::unsafe_transmute_from(from) }
+    }
+}
+
+
+pub unsafe trait UnsafeTransmuteFrom<T, O = ()>: Sized
+where
+    O: neglect::UnsafeOptions,
+{
+    /// Reinterprets the bits of `from` as type `Self`.
+    unsafe fn unsafe_transmute_from(from: T) -> Self;
+}
+
+unsafe impl<T, U, O> UnsafeTransmuteFrom<T, O> for U
+where
+    U: from_type::FromType<T,
+        Variant,
+        <O as neglect::UnsafeOptions>::Alignment,
+        <O as neglect::UnsafeOptions>::Transparency,
+        <O as neglect::UnsafeOptions>::Stability,
+      >,
+    O: neglect::Options,
+{
+    #[inline(always)]
+    unsafe fn unsafe_transmute_from(from: T) -> U {
+        unsafe { transmute_safe::<T, U, O>(from) }
     }
 }
 
@@ -85,9 +159,15 @@ where
 /// [soundness]: crate::sound#when-is-a-transmutation-sound
 /// [safety]: crate::safe
 #[inline(always)]
-pub fn transmute_safe<T, U>(from: T) -> U
+pub fn transmute_safe<T, U, O>(from: T) -> U
 where
-    U: Transparent + from_type::FromType<T, Relax, Safe>,
+    U: from_type::FromType<T,
+        Variant,
+        <O as neglect::UnsafeOptions>::Alignment,
+        <O as neglect::UnsafeOptions>::Transparency,
+        <O as neglect::UnsafeOptions>::Stability,
+      >,
+    O: neglect::Options,
 {
     unsafe {
         let to = mem::transmute_copy(&from);
@@ -111,9 +191,14 @@ where
 /// [soundness]: crate::sound#when-is-a-transmutation-sound
 /// [safety]: crate::safe
 #[inline(always)]
-pub unsafe fn transmute_sound<T, U>(from: T) -> U
+pub unsafe fn transmute_sound<T, U, O>(from: T) -> U
 where
-    U: from_type::FromType<T, Relax, Sound>,
+    U: from_type::FromType<T,
+        Variant,
+        <O as neglect::UnsafeOptions>::Alignment,
+        <O as neglect::UnsafeOptions>::Transparency,
+        <O as neglect::UnsafeOptions>::Stability>,
+    O: neglect::UnsafeOptions,
 {
     let to = mem::transmute_copy(&from);
     mem::forget(from);

@@ -11,7 +11,7 @@ use into_bytelevel::IntoByteLevel;
 use padding::PaddingNeededForField;
 
 /// The actual memory layout characteristics of `Self`.
-pub trait Layout {
+pub trait Layout<Visibility> {
     /// The actual alignment of `Self`.
     type Align: Unsigned;
 
@@ -23,7 +23,7 @@ pub trait Layout {
 }
 
 #[rustfmt::skip]
-impl<T> Layout for T
+impl<T, Visibility> Layout<Visibility> for T
 where
     T: Type,
 
@@ -31,24 +31,28 @@ where
         IntoByteLevel<
             ReprAlignOf<T>,
             ReprPackedOf<T>,
+            Visibility,
         >,
 {
     type Align =
         <HighLevelOf<T> as IntoByteLevel<
             ReprAlignOf<T>,
             ReprPackedOf<T>,
+            Visibility,
         >>::Align;
 
     type Size =
         <HighLevelOf<T> as IntoByteLevel<
             ReprAlignOf<T>,
             ReprPackedOf<T>,
+            Visibility,
         >>::Offset;
 
     type ByteLevel =
         <HighLevelOf<T> as IntoByteLevel<
             ReprAlignOf<T>,
             ReprPackedOf<T>,
+            Visibility,
         >>::Output;
 }
 

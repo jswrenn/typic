@@ -12,11 +12,11 @@ use crate::private::num::{Sub1, U1};
 use crate::private::target::PointerWidth;
 
 #[cfg(target_endian = "little")]
-pub type NonZeroSeq<S, Rest> =
-    PCons<slot::NonZeroSlot<U1>, PCons<slot::InitializedSlot<Sub1<S>>, Rest>>;
+pub type NonZeroSeq<Vis, S, Rest> =
+    PCons<slot::NonZeroSlot<Vis, U1>, PCons<slot::InitializedSlot<Vis, Sub1<S>>, Rest>>;
 
 #[cfg(target_endian = "big")]
-pub type NonZeroSeq<S, Rest> =
-    PCons<slot::InitializedSlot<Sub1<S>, PCons<slot::NonZeroSlot<U1>>, Rest>>;
+pub type NonZeroSeq<Vis, S, Rest> =
+    PCons<slot::InitializedSlot<Vis, Sub1<S>, PCons<slot::NonZeroSlot<Vis, U1>>, Rest>>;
 
-pub type ReferenceBytes<Rest> = NonZeroSeq<PointerWidth, Rest>;
+pub type ReferenceBytes<Vis, Rest> = NonZeroSeq<Vis, PointerWidth, Rest>;
