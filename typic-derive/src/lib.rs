@@ -12,6 +12,21 @@ use syn::visit::Visit;
 use syn::{parse_macro_input, parse_quote};
 use syn::{Attribute, Lit, Meta, NestedMeta, Visibility};
 
+#[proc_macro_derive(StableABI)]
+pub fn stable_abi(input: TokenStream) -> TokenStream {
+    use syn::DeriveInput;
+    let DeriveInput {
+      ident,
+      generics,
+      ..
+    } = parse_macro_input!(input as DeriveInput);
+
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    (quote! {
+        impl #impl_generics typic::StableABI for #ident #ty_generics #where_clause {}
+    }).into()
+}
+
 #[proc_macro_attribute]
 pub fn typicrepr(_args: TokenStream, input: TokenStream) -> TokenStream {
     repr(_args, input)
@@ -32,16 +47,6 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
         }
     });
 
-    let transparent = if all_public {
-        quote! {
-          unsafe impl #impl_generics typic::Transparent
-          for #name #ty_generics #where_clause
-          {}
-        }
-    } else {
-        quote! {}
-    };
-
     let mut repr = Repr::default();
     attrs
         .into_iter()
@@ -50,8 +55,6 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
     if let Some(Method::Transparent) = repr.method {
         return (quote! {
           #definition
-
-          #transparent
 
           impl #impl_generics typic::internal::Type
           for #name #ty_generics #where_clause
@@ -87,8 +90,6 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
         return (quote! {
           #definition
 
-          #transparent
-
           impl #impl_generics typic::internal::Type
           for #name #ty_generics #where_clause
           {
@@ -106,16 +107,27 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
     let fields = definition
         .fields
         .iter()
-        .map(|field| field.ty.clone())
         .rfold(
             quote! {typic::internal::PNil},
-            |rest, field| quote! {typic::internal::PCons<#field, #rest>},
+            |rest, field| {
+              let vis = if let Visibility::Public(_) = field.vis {
+                format_ident!("Public")
+              } else {
+                format_ident!("Private")
+              };
+              let field = field.ty.clone();
+              quote! {
+                typic::internal::PCons<
+                  typic::internal::Field<
+                    typic::internal::field::#vis ,
+                    #field>,
+                  #rest>
+              }
+            },
         );
 
     (quote! {
       #definition
-
-      #transparent
 
       impl #impl_generics typic::internal::Type
       for #name #ty_generics #where_clause

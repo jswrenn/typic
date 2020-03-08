@@ -7,23 +7,23 @@ pub trait Flatten {
     type Output;
 }
 
-impl<T, TRest> Flatten for PCons<Array<T, num::UTerm>, TRest>
+impl<Vis, T, TRest> Flatten for PCons<Array<Vis, T, num::UTerm>, TRest>
 where
 {
     type Output = TRest;
 }
 
-impl<T, A, B, TRest> Flatten for PCons<Array<T, num::UInt<A, B>>, TRest>
+impl<Vis, T, A, B, TRest> Flatten for PCons<Array<Vis, T, num::UInt<A, B>>, TRest>
 where
-    T: Layout,
+    T: Layout<Vis>,
     num::UInt<A, B>: num::Sub<num::B1>,
 
-    <T as Layout>::ByteLevel:
-      blv::Add<PCons<Array<T, num::Sub1<num::UInt<A, B>>>, TRest>>,
+    <T as Layout<Vis>>::ByteLevel:
+      blv::Add<PCons<Array<Vis, T, num::Sub1<num::UInt<A, B>>>, TRest>>,
 {
     type Output =
       blv::Sum<
-        <T as Layout>::ByteLevel,
-        PCons<Array<T, num::Sub1<num::UInt<A, B>>>, TRest>
+        <T as Layout<Vis>>::ByteLevel,
+        PCons<Array<Vis, T, num::Sub1<num::UInt<A, B>>>, TRest>
       >;
 }

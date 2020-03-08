@@ -7,10 +7,11 @@
 //! Just import it and replace your `#[repr(...)]` attributes with `#[typic::repr(...)]`:
 //! ```
 //! // Import it!
-//! use typic::{self, TransmuteInto};
+//! use typic::{self, StableTransmuteInto, StableABI};
 //!
 //! // Update your attributes!
 //! #[typic::repr(C)]
+//! #[derive(StableABI)]
 //! pub struct Foo(pub u8, pub u16);
 //!
 //! // Transmute fearlessly!
@@ -19,8 +20,9 @@
 //! ```compile_fail
 //! # use typic::{self, TransmuteInto};
 //! # #[typic::repr(C)]
+//! # #[derive(StableABI)]
 //! # struct Foo(pub u8, pub u16);
-//! let _ : u32 = Foo(16, 12).transmute_into(); // Compiler Error!
+//! let _ : u32 = Foo(16, 12).transmute_into(); // Compile Error!
 //! ```
 //!
 //! [soundness]: crate::sound#when-is-a-transmutation-sound
@@ -43,9 +45,9 @@
 //! ***you may be relying on undefined compiler behavior***.
 //!
 //! ### Sound Transmutation
-//! [`sound_transmute`]: crate::sound_transmute
+//! [`transmute_sound`]: crate::transmute_sound
 //!
-//! The [`sound_transmute`] function allows for the ***unsafe*** transmutation
+//! The [`transmute_sound`] function allows for the ***unsafe*** transmutation
 //! between `T` and `U`, when merely transmuting from `T` to `U` will not cause
 //! undefined behavior. For the key rules that govern when `T` is soundly
 //! convertible to `U`, see ***[When is a transmutation sound?][soundness]***.
@@ -72,20 +74,21 @@
 pub mod docs {
     pub mod prelude {
         use crate::typic;
-        pub use crate::{transmute_sound, TransmuteInto, Transparent};
+        pub use crate::StableABI;
+        pub use crate::{transmute_sound, StableTransmuteInto};
         pub use core::mem;
         pub use core::num::NonZeroU8;
 
         #[typic::repr(C)]
-        #[derive(Default)]
+        #[derive(Default, StableABI)]
         pub struct Padded(pub u8, pub u16, pub u8);
 
         #[typic::repr(C)]
-        #[derive(Default)]
+        #[derive(Default, StableABI)]
         pub struct Packed(pub u16, pub u16, pub u16);
 
         #[typic::repr(C)]
-        #[derive(Default)]
+        #[derive(Default, StableABI)]
         pub struct Constrained {
             wizz: i8,
             bang: u8,
@@ -106,7 +109,7 @@ pub mod docs {
         }
 
         #[typic::repr(C)]
-        #[derive(Default)]
+        #[derive(Default, StableABI)]
         pub struct Unconstrained {
             pub wizz: u8,
             pub bang: i8,
@@ -118,41 +121,46 @@ pub mod docs {
 #[deprecated(note = "TODO")]
 pub enum TODO {}
 
-pub(crate) mod private {
-    pub(crate) mod bytelevel;
+#[doc(hidden)]
+pub mod private {
+    pub mod bytelevel;
     pub mod highlevel;
-    pub(crate) mod layout;
-    pub(crate) mod num;
-    pub(crate) mod target;
-    pub(crate) mod transmute;
+    pub mod layout;
+    pub mod num;
+    pub mod target;
+    pub mod transmute;
 }
 
 #[doc(hidden)]
 pub use private::highlevel as internal;
 
 #[doc(inline)]
-pub use private::highlevel::Transparent;
-
-#[doc(inline)]
-pub use private::transmute::{transmute_safe, transmute_sound, TransmuteFrom, TransmuteInto};
+pub use private::transmute::{transmute_safe, transmute_sound, TransmuteFrom, TransmuteInto, StableTransmuteInto};
 
 /// Use `#[typic::repr(...)]` instead of `#[repr(...)]` on your type definitions.
 #[doc(inline)]
-pub use typic_derive::repr;
+pub use typic_derive::{repr, StableABI};
 
 mod typic {
     pub use super::*;
 }
 
+pub mod neglect {
+    #[doc(inline)]
+    pub use crate::private::transmute::neglect::*;
+}
+
+pub trait StableABI {}
+
 /// Guidance and tools for ***safe*** transmutation.
 ///
-/// A [sound transmutation] is safe only if it also cannot violate library
-/// invariants on types. Unless a type implements [`Transparent`], it is
-/// assumed to have library-defined invariants on its fields.
+/// A [sound transmutation] is safe only if the resulting value cannot possibly
+/// violate library-enforced invariants. Typic assumes that all non-zero-sized
+/// fields with any visibility besides `pub` could have library-enforced
+/// invariants.
 ///
 /// [sound transmutation]: crate#sound-transmutation
 /// [soundness]: crate::sound#when-is-a-transmutation-sound
-/// [`Transparent`]: crate::Transparent
 /// [`TransmuteInto`]: crate::TransmuteInto
 /// [`transmute_sound`]: crate::transmute_sound
 ///
@@ -164,6 +172,7 @@ mod typic {
 /// ```
 /// # use typic::docs::prelude::*;
 /// #[typic::repr(C)]
+/// #[derive(StableABI)]
 /// pub struct Constrained {
 ///     wizz: i8,
 ///     bang: u8,
@@ -184,6 +193,7 @@ mod typic {
 /// }
 ///
 /// #[typic::repr(C)]
+/// #[derive(StableABI)]
 /// pub struct Unconstrained {
 ///     pub wizz: u8,
 ///     pub bang: i8,
@@ -194,45 +204,25 @@ mod typic {
 /// `Constrained`:
 /// ```
 /// use typic::docs::prelude::*;
-/// let _ : Constrained  = unsafe { transmute_sound(Unconstrained::default()) };
+/// use typic::neglect;
+/// let _ : Constrained  = unsafe { transmute_sound::<_, _, neglect::Transparency>(Unconstrained::default()) };
 /// ```
-/// ...but it isn't safe! The [`transmute_sound`] function creates an instance
-/// of `Bar` _without_ calling its `new` constructor, thereby bypassing the
-/// safety check which ensures `something_dangerous` does not violate Rust's
+/// ...but it is **not** safe! The [`transmute_sound`] function creates an
+/// instance of `Bar` _without_ calling its `new` constructor, thereby bypassing
+/// the safety check which ensures `something_dangerous` does not violate Rust's
 /// memory model. The compiler will reject our program if we try to safely
 /// transmute `Unconstrained` to `Constrained`:
 /// ```compile_fail
 /// # use typic::docs::prelude::*;
 /// let unconstrained = Unconstrained::default();
 /// let _ : Constrained  = unconstrained.transmute_into();
-///                                   // ^^^^^^^^^^^^^^
-///                                   // the trait `Transparent` is not
-///                                   // implemented for `Constrained`
-/// ```
-///
-/// ## Indicating that a transmutation is safe
-///
-/// The [`Transparent`] trait is used to indicate that a compound type does not
-/// place any additional validity restrictions on its fields.
-///
-/// This trait can be implemented ***manually***:
-/// ```
-/// # use typic::docs::prelude::*;
-/// #[typic::repr(C)]
-/// pub struct Unconstrained {
-///     wizz: u8,
-///     bang: i8,
-/// }
-///
-/// unsafe impl Transparent for Unconstrained {}
-///
-/// let _ : Unconstrained = u16::default().transmute_into();
 /// ```
 ///
 /// Or, ***automatically***, by marking the fields `pub`:
 /// ```
 /// # use typic::docs::prelude::*;
 /// #[typic::repr(C)]
+/// #[derive(StableABI)]
 /// pub struct Unconstrained {
 ///     pub wizz: u8,
 ///     pub bang: i8,
@@ -241,19 +231,25 @@ mod typic {
 /// let _ : Unconstrained = u16::default().transmute_into();
 /// ```
 ///
-/// If the fields are marked `pub`, the type cannot rely on any internal
-/// validity requirements, as users of the type are free to manipulate its
-/// fields via the `.` operator.
+/// If the fields are marked `pub`, the type cannot possibly rely on any
+/// internal validity requirements, as users of the type are free to manipulate
+/// its fields direclty via the `.` operator.
 ///
 /// ## Safely transmuting references
-/// When safely transmuting owned values, only the destination must be
-/// [`Transparent`]:
+/// When safely transmuting owned values, all non-padding bytes in the source
+/// type must correspond to `pub` bytes in the destination type:
 /// ```
 /// # use typic::docs::prelude::*;
 /// let _ : Unconstrained = Constrained::default().transmute_into();
 /// ```
-/// When safely transmuting references, both the source and destination types
-/// must be [`Transparent`]:
+/// The visibility (or lack thereof) of bytes in the source type does not
+/// affect safety.
+///
+/// When safely transmuting references, each corresponding byte in the source
+/// and destination types must have the _same_ visibility. Without this
+/// restriction, you could inadvertently violate library invariants of a type
+/// by transmuting and mutating a mutable reference to it:
+///
 /// ```compile_fail
 /// # use typic::docs::prelude::*;
 /// let mut x = Constrained::default();
@@ -261,17 +257,18 @@ mod typic {
 /// {
 ///     let y : &mut Unconstrained = (&mut x).transmute_into();
 ///                                        // ^^^^^^^^^^^^^^
-///                                        // the trait `Transparent` is not
-///                                        // implemented for `Constrained`
+///                                        // Compile Error!
 ///     let z : u8 = -100i8.transmute_into();
 ///     y.wizz = z;
 /// }
 ///
-/// x.something_dangerous(); /// Ack! `x.wizz + x.bang` is -100!
+/// // Ack! `x.wizz + x.bang` is now -100!
+/// // This violates the safety invariant of `something_dangerous`!
+/// x.something_dangerous();
 /// ```
 pub mod safe {
     #[doc(inline)]
-    pub use crate::{transmute_safe, TransmuteFrom, TransmuteInto};
+    pub use crate::{transmute_safe, TransmuteFrom, TransmuteInto, StableTransmuteInto};
 }
 
 /// Guidance and tools for ***sound*** transmutation.
@@ -279,7 +276,7 @@ pub mod safe {
 /// A transmutation is ***sound*** if the mere act of transmutation is
 /// guaranteed to not violate Rust's memory model.
 ///
-/// [`sound_transmute`]: crate::sound_transmute
+/// [`transmute_sound`]: crate::transmute_sound
 /// [`TransmuteInto<U>`]: crate::TransmuteInto
 ///
 /// ## When is a transmutation sound?
@@ -289,7 +286,7 @@ pub mod safe {
 /// representations](#well-defined-representation), and does not violate Rust's
 /// memory model. See [*Transmutations Between Owned Values*][transmute-owned],
 /// and [*Transmutations Between References*][transmute-references]. These rules
-/// are automatically enforced by [`sound_transmute`] and [`TransmuteInto<U>`].
+/// are automatically enforced by [`transmute_sound`] and [`TransmuteInto<U>`].
 ///
 /// ### Well-Defined Representation
 /// [`u8`]: core::u8
@@ -521,6 +518,7 @@ pub mod sound {
 /// ```
 pub mod layout {
     use crate::private::{layout, num};
+    use crate::internal::{Public, Private};
 
     /// Type-level information about type representation.
     pub trait Layout {
@@ -549,10 +547,10 @@ pub mod layout {
 
     impl<T> Layout for T
     where
-        T: layout::Layout,
+        T: layout::Layout<Public>,
     {
-        type Size = <T as layout::Layout>::Size;
-        type Align = <T as layout::Layout>::Align;
+        type Size = <T as layout::Layout<Public>>::Size;
+        type Align = <T as layout::Layout<Public>>::Align;
     }
 
     /// Get the size of `T` (if `T: Layout`).

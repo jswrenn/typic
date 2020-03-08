@@ -1,21 +1,23 @@
 use core::mem::align_of;
 use core::num::NonZeroU8;
 use static_assertions::*;
-use typic::{self, TransmuteInto};
+use typic::{self, StableTransmuteInto, StableABI};
 
 #[test]
 fn zst_transmute() {
     #[typic::repr(C)]
+    #[derive(StableABI)]
     struct T;
 
     #[typic::repr(C)]
+    #[derive(StableABI)]
     struct U;
 
     let _: U = T.transmute_into();
     let _: U = U.transmute_into();
     let _: T = U.transmute_into();
     let _: T = T.transmute_into();
-
+    
     let _: &T = (&U).transmute_into();
     let _: &T = (&T).transmute_into();
     let _: &U = (&T).transmute_into();
@@ -25,11 +27,11 @@ fn zst_transmute() {
 #[test]
 fn small_transmute() {
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     struct T(pub u8, pub u8);
 
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     struct U(pub u16);
 
     let _: U = T::default().transmute_into();
@@ -41,11 +43,11 @@ fn small_transmute() {
 #[test]
 fn padding_transmute() {
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     struct Padded(pub u8, pub u16, pub u8);
 
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     struct Packed(pub u16, pub u16, pub u16);
 
     let _: Packed = Packed::default().transmute_into();
@@ -55,7 +57,7 @@ fn padding_transmute() {
     let _: Padded = Packed::default().transmute_into();
 
     // Transmuting padding bytes into initialized bytes is unsound.
-    assert_not_impl_any!(Padded: TransmuteInto<Packed>);
+    assert_not_impl_any!(Padded: StableTransmuteInto<Packed>);
 }
 
 #[test]
@@ -68,8 +70,8 @@ fn arrays() {
     let _: [u8; 4] = [0u8; 5].transmute_into();
 
     // Arrays may not be grown:
-    assert_not_impl_any!([u8; 4]: TransmuteInto<[u8; 5]>);
-    assert_not_impl_any!([u8; 4]: TransmuteInto<[u16; 4]>);
+    assert_not_impl_any!([u8; 4]: StableTransmuteInto<[u8; 5]>);
+    assert_not_impl_any!([u8; 4]: StableTransmuteInto<[u16; 4]>);
 }
 
 #[test]
@@ -78,27 +80,27 @@ fn references() {
     let _: &[u8; 0] = (&[0u16; 0]).transmute_into();
 
     // ...but not a more strictly aligned type:
-    assert_not_impl_any!(&'static [u8; 0]: TransmuteInto<&'static [u16; 0]>);
+    assert_not_impl_any!(&'static [u8; 0]: StableTransmuteInto<&'static [u16; 0]>);
 
     // You cannot alter the validity with a pointer transmute:
-    assert_not_impl_any!(&'static u8: TransmuteInto<&'static NonZeroU8>);
-    assert_not_impl_any!(&'static NonZeroU8: TransmuteInto<&'static u8>);
+    assert_not_impl_any!(&'static u8: StableTransmuteInto<&'static NonZeroU8>);
+    assert_not_impl_any!(&'static NonZeroU8: StableTransmuteInto<&'static u8>);
 
     // You may decrease the size:
     let _: &u8 = (&0u16).transmute_into();
 
     // ...but you cannot increase the size:
-    assert_not_impl_any!(&'static u8: TransmuteInto<&'static u16>);
+    assert_not_impl_any!(&'static u8: StableTransmuteInto<&'static u16>);
 
     // You cannot violate transparency:
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     pub struct A(u8);
 
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     pub struct B(pub u8);
 
-    assert_not_impl_any!(&'static A: TransmuteInto<&'static B>);
-    assert_not_impl_any!(&'static B: TransmuteInto<&'static A>);
+    assert_not_impl_any!(&'static A: StableTransmuteInto<&'static B>);
+    assert_not_impl_any!(&'static B: StableTransmuteInto<&'static A>);
 }

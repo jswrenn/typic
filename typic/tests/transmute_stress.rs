@@ -1,13 +1,13 @@
 #![recursion_limit = "512"]
 
 use static_assertions::*;
-use typic::{self, TransmuteInto};
+use typic::{self, StableABI, StableTransmuteInto};
 
 // Adapted From:
 // https://rust-lang.zulipchat.com/#narrow/stream/216762-project-safe-transmute/topic/typic/near/185459723
 fn stress() {
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     pub struct A(
         pub [u64; 1],
         pub [u64; 2],
@@ -28,7 +28,7 @@ fn stress() {
     );
 
     #[typic::repr(C)]
-    #[derive(Default)]
+    #[derive(Default, StableABI)]
     pub struct B(
         pub [u64; 16],
         pub [u64; 15],

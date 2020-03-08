@@ -10,21 +10,21 @@ pub trait Add<RHS> {
 
 pub type Sum<A, B> = <A as Add<B>>::Output;
 
-impl<K> Add<PNil> for Bytes<K, num::UTerm> {
+impl<Vis, K> Add<PNil> for Bytes<Vis, K, num::UTerm> {
     type Output = PNil;
 }
 
 /// `Bytes<_, N> + PNil = Bytes<_, N>`, where `N > 0`.
-impl<K, A, B> Add<PNil> for Bytes<K, num::UInt<A, B>> {
+impl<Vis, K, A, B> Add<PNil> for Bytes<Vis, K, num::UInt<A, B>> {
     type Output = PCons<Self, PNil>;
 }
 
-impl<K, H, T> Add<PCons<H, T>> for Bytes<K, num::UTerm> {
+impl<Vis, K, H, T> Add<PCons<H, T>> for Bytes<Vis, K, num::UTerm> {
     type Output = PCons<H, T>;
 }
 
 /// `Bytes<_, N> + PNil = Bytes<_, N>`, where `N > 0`.
-impl<K, H, T, A, B> Add<PCons<H, T>> for Bytes<K, num::UInt<A, B>> {
+impl<Vis, K, H, T, A, B> Add<PCons<H, T>> for Bytes<Vis, K, num::UInt<A, B>> {
     type Output = PCons<Self, PCons<H, T>>;
 }
 

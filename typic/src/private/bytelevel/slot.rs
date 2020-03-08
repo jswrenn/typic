@@ -6,6 +6,12 @@ pub use array::Array;
 pub use bytes::Bytes;
 pub use reference::{Reference, Shared, SharedRef, Unique, UniqueRef};
 
-pub type PaddingSlot<S> = Bytes<bytes::kind::Uninitialized, S>;
-pub type InitializedSlot<S> = Bytes<bytes::kind::Initialized, S>;
-pub type NonZeroSlot<S> = Bytes<bytes::kind::NonZero, S>;
+/// The data is from a `pub` field
+pub type Pub = crate::internal::Public;
+
+/// The field is from a field that is not `pub`. 
+pub type Priv = crate::internal::Private;
+
+pub type PaddingSlot<S> = Bytes<Pub, bytes::kind::Uninitialized, S>;
+pub type InitializedSlot<Vis, S> = Bytes<Vis, bytes::kind::Initialized, S>;
+pub type NonZeroSlot<Vis, S> = Bytes<Vis, bytes::kind::NonZero, S>;

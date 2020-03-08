@@ -6,7 +6,7 @@ pub mod field;
 pub mod primitives;
 pub mod product;
 
-pub trait IntoByteLevel<ReprAlign, ReprPacked, Offset = U0> {
+pub trait IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset = U0> {
     /// The byte-level representation of the type.
     type Output;
 
