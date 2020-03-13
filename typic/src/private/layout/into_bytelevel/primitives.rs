@@ -1,4 +1,3 @@
-use crate::StableABI;
 use crate::stability::*;
 use super::IntoByteLevel;
 use crate::private::bytelevel::{

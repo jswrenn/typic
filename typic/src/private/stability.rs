@@ -37,6 +37,9 @@ impl Aspect for Alignment     {}
 impl Aspect for Size      {}
 impl Aspect for Validity  {}
 
+/// Implements all stability restrictions on a type.
+pub use typic_derive::StableABI;
+
 /// Increasing the given aspect is a breaking change.
 pub enum Increase {}
 

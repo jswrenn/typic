@@ -7,7 +7,7 @@
 //! Just import it and replace your `#[repr(...)]` attributes with `#[typic::repr(...)]`:
 //! ```
 //! // Import it!
-//! use typic::{self, transmute::StableTransmuteInto, StableABI};
+//! use typic::{self, transmute::StableTransmuteInto, stability::StableABI};
 //!
 //! // Update your attributes!
 //! #[typic::repr(C)]
@@ -32,7 +32,7 @@
 pub mod docs {
     pub mod prelude {
         use crate::typic;
-        pub use crate::StableABI;
+        pub use crate::stability::StableABI;
         pub use crate::transmute::{unsafe_transmute, StableTransmuteInto};
         pub use core::mem;
         pub use core::num::NonZeroU8;
@@ -97,9 +97,6 @@ pub use private::highlevel as internal;
 #[doc(inline)]
 pub use typic_derive::repr;
 
-#[deprecated(note = "To be removed.")]
-pub use typic_derive::StableABI;
-
 #[doc(inline)]
 pub use private::stability;
 
@@ -109,29 +106,6 @@ pub mod transmute;
 mod typic {
     pub use super::*;
 }
-
-/// A marker trait indicating that a type's in-memory layout is a guaranteed
-/// part of its API.
-///
-/// By implementing this trait for a type, it is a breaking change to do any
-/// of the following:
-/// 1. change its minimum alignment,
-/// 2. change its size, or
-/// 3. change the arrangement or validity of its fields.
-///
-/// ## Example
-/// ```rust
-/// # use typic::docs::prelude::*;
-/// # use core::mem;
-/// #[typic::repr(C)]
-/// #[derive(Default)]
-/// struct Foo_v1_0_0(pub u8, pub u16, pub u8);
-///
-/// assert_eq!(2, mem::align_of::<Foo_v1_0_0>());
-/// assert_eq!(6, mem::size_of::<Foo_v1_0_0>());
-/// ```
-#[deprecated(note = "To be removed.")]
-pub trait StableABI {}
 
 /// Details about the layout of types.
 ///
