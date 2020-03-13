@@ -1,4 +1,4 @@
-use crate::StableABI;
+use crate::stability::*;
 use crate::private::layout::Layout;
 use crate::internal::{Public, Private};
 use super::{Stable, Unstable, from_layout::FromLayout};
@@ -32,8 +32,8 @@ where
 unsafe impl<T, U, Variance, Alignment, Transparency>
 FromType<T, Variance, Alignment, Transparency, Stable> for U
 where
-    T: StableABI + Layout<Public>,
-    U: StableABI + Layout<Public>,
+    T: Never<Increase, Size> + Layout<Public>,
+    U: Never<Decrease, Size> + Layout<Public>,
     <U as Layout<Public>>::ByteLevel: FromLayout<<T as Layout<Public>>::ByteLevel,
       Variance,
       Alignment,

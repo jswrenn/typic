@@ -1,7 +1,7 @@
 #![recursion_limit = "512"]
 
 use static_assertions::*;
-use typic::{self, StableABI, StableTransmuteInto};
+use typic::{self, StableABI, transmute::StableTransmuteInto};
 
 // Adapted From:
 // https://rust-lang.zulipchat.com/#narrow/stream/216762-project-safe-transmute/topic/typic/near/185459723

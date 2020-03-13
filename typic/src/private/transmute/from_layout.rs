@@ -8,7 +8,7 @@ use crate::private::layout::{Layout, AlignedTo};
 use crate::private::num::{self, UInt, UTerm};
 use super::from_type::FromType;
 use super::{Variant, Invariant, Static, Unchecked, Enforced, Unenforced, Stable, Unstable};
-
+use crate::stability::*;
 mod consume;
 pub use consume::Consume;
 
@@ -262,6 +262,16 @@ mod reference_to {
     impl FromMutability<Unique> for Shared {}
     impl FromMutability<Shared> for Shared {}
 
+    pub trait FromAlignment<T, Stability> {}
+
+    impl<T, U> FromAlignment<T, Stable> for U
+    where
+        U: Never<Increase, Alignment>,
+        T: Never<Decrease, Alignment>,
+    {}
+
+    impl<T, U> FromAlignment<T, Unstable> for U {}
+
     /// [Reference|_] -> [Reference|_]
     #[rustfmt::skip] unsafe impl<'t, 'u, TVis, T, TK, TRest, UVis, U, UK, URest, Variance, Transparency, Stability>
     FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Variance, Unchecked, Transparency, Stability>
@@ -269,6 +279,8 @@ mod reference_to {
     where
         't: 'u,
         UK: FromMutability<TK>,
+        U: Never<Increase, Alignment>,
+        T: Never<Decrease, Alignment>,
         U: FromType<T, Invariant, Unchecked, Transparency, Stability>,
     {}
 
@@ -287,7 +299,7 @@ mod reference_to {
     where
         't: 'u,
         UK: FromMutability<TK>,
-        U: AlignedTo<T> + FromType<T, Invariant, Static, Transparency, Stability>,
+        U: FromAlignment<T, Stability> + AlignedTo<T> + FromType<T, Invariant, Static, Transparency, Stability>,
     {}
 }
 

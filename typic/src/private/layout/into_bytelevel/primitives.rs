@@ -1,4 +1,5 @@
 use crate::StableABI;
+use crate::stability::*;
 use super::IntoByteLevel;
 use crate::private::bytelevel::{
     slot::{Array, InitializedSlot, SharedRef, UniqueRef},
@@ -20,7 +21,7 @@ macro_rules! primitive_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl StableABI for $ty {}
+            impl<D: Direction, A: Aspect> Never<D, A> for $ty {}
 
             impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for $ty
             where
@@ -76,7 +77,7 @@ macro_rules! nonzero_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl StableABI for $ty {}
+            impl<D: Direction, A: Aspect> Never<D, A> for $ty {}
 
             impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for $ty
             where
@@ -115,7 +116,7 @@ impl Type for () {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl StableABI for () {}
+impl<D: Direction, A: Aspect> Never<D, A> for () {}
 
 impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for ()
 where
@@ -127,7 +128,7 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, T> StableABI for &'a T {}
+impl<'a, D: Direction, A: Aspect, T> Never<D, A> for &'a T {}
 
 #[rustfmt::skip]
 impl<'a, T> Type for &'a T {
@@ -146,7 +147,7 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, T> StableABI for &'a mut T {}
+impl<'a, D: Direction, A: Aspect, T> Never<D, A> for &'a mut T {}
 
 #[rustfmt::skip]
 impl<'a, T> Type for &'a mut T {
@@ -166,7 +167,7 @@ where
     type Align = PointerWidth;
 }
 
-impl<T> StableABI for *const T {}
+impl<D: Direction, A: Aspect, T> Never<D, A> for *const T {}
 
 #[rustfmt::skip]
 impl<T> Type for *const T {
@@ -185,7 +186,7 @@ where
     type Align = PointerWidth;
 }
 
-impl<T> StableABI for *mut T {}
+impl<D: Direction, A: Aspect, T> Never<D, A> for *mut T {}
 
 #[rustfmt::skip]
 impl<T> Type for *mut T {
@@ -211,7 +212,7 @@ impl<T> Type for AtomicPtr<T> {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T> StableABI for AtomicPtr<T> {}
+impl<D: Direction, A: Aspect, T> Never<D, A> for AtomicPtr<T> {}
 
 impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for AtomicPtr<T>
 where
@@ -235,7 +236,9 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<T> StableABI for Cell<T> {}
+impl<D: Direction, A: Aspect, T> Never<D, A> for Cell<T>
+where T: Never<D, A>
+{}
 
 #[rustfmt::skip]
 impl<T> Type for UnsafeCell<T>
@@ -247,7 +250,9 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<T> StableABI for UnsafeCell<T> {}
+impl<D: Direction, A: Aspect, T> Never<D, A> for UnsafeCell<T>
+where T: Never<D, A>
+{}
 
 macro_rules! array_layout {
   ($($n: expr, $t: ty);*) => {
@@ -258,7 +263,9 @@ macro_rules! array_layout {
             #[doc(hidden)] type HighLevel = Self;
         }
 
-        impl<T> StableABI for [T; $n] {}
+        impl<D: Direction, A: Aspect, T> Never<D, A> for [T; $n]
+        where T: Never<D, A>
+        {}
 
         impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
             for [T; $n]
@@ -324,9 +331,10 @@ where
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T, N> StableABI for GenericArray<T, N>
+impl<D: Direction, A: Aspect, T, N> Never<D, A> for GenericArray<T, N>
 where
     N: ArrayLength<T>,
+    T: Never<D, A>,
 {}
 
 impl<ReprAlign, ReprPacked, Visibility, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
