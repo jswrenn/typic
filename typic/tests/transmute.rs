@@ -1,7 +1,7 @@
 use core::mem::align_of;
 use core::num::NonZeroU8;
 use static_assertions::*;
-use typic::{self, StableTransmuteInto, StableABI};
+use typic::{self, transmute::StableTransmuteInto, StableABI};
 
 #[test]
 fn zst_transmute() {

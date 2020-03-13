@@ -23,7 +23,35 @@ pub fn stable_abi(input: TokenStream) -> TokenStream {
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     (quote! {
-        impl #impl_generics typic::StableABI for #ident #ty_generics #where_clause {}
+        impl #impl_generics typic::stability::Never<
+          typic::stability::Increase,
+          typic::stability::Alignment,
+        > for #ident #ty_generics #where_clause {}
+
+        impl #impl_generics typic::stability::Never<
+          typic::stability::Decrease,
+          typic::stability::Alignment,
+        > for #ident #ty_generics #where_clause {}
+
+        impl #impl_generics typic::stability::Never<
+          typic::stability::Increase,
+          typic::stability::Size,
+        > for #ident #ty_generics #where_clause {}
+
+        impl #impl_generics typic::stability::Never<
+          typic::stability::Decrease,
+          typic::stability::Size,
+        > for #ident #ty_generics #where_clause {}
+
+        impl #impl_generics typic::stability::Never<
+          typic::stability::Increase,
+          typic::stability::Validity,
+        > for #ident #ty_generics #where_clause {}
+
+        impl #impl_generics typic::stability::Never<
+          typic::stability::Decrease,
+          typic::stability::Validity,
+        > for #ident #ty_generics #where_clause {}
     }).into()
 }
 

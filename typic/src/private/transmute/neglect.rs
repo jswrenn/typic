@@ -9,119 +9,119 @@ pub struct Transparency;
 /// in-memory representations.
 pub struct Stability;
 
-pub trait Options: UnsafeOptions {
+pub trait TransmuteOptions: UnsafeTransmuteOptions {
     type Stability;
 }
 
-impl Options for () {
+impl TransmuteOptions for () {
     type Stability    = super::Stable;
 }
 
-impl Options for Stability {
+impl TransmuteOptions for Stability {
     type Stability    = super::Unstable;
 }
 
-impl<O> UnsafeOptions for O
+impl<O> UnsafeTransmuteOptions for O
 where
-    O: Options
+    O: TransmuteOptions
 {
     type Alignment      = super::Static;
     type Transparency   = super::Enforced;
-    type Stability      = <O as Options>::Stability;
+    type Stability      = <O as TransmuteOptions>::Stability;
 }
 
-pub trait UnsafeOptions {
+pub trait UnsafeTransmuteOptions {
     type Alignment;
     type Transparency;
     type Stability;
 }
 
-impl UnsafeOptions for Alignment {
+impl UnsafeTransmuteOptions for Alignment {
     type Alignment    = super::Unchecked;
     type Stability    = super::Stable;
     type Transparency = super::Enforced;
 }
 
-impl UnsafeOptions for (Alignment,) {
+impl UnsafeTransmuteOptions for (Alignment,) {
     type Alignment    = super::Unchecked;
     type Stability    = super::Stable;
     type Transparency = super::Enforced;
 }
 
-impl UnsafeOptions for Transparency {
+impl UnsafeTransmuteOptions for Transparency {
     type Alignment    = super::Static;
     type Stability    = super::Stable;
     type Transparency = super::Unenforced;
 }
 
-impl UnsafeOptions for (Transparency,) {
+impl UnsafeTransmuteOptions for (Transparency,) {
     type Alignment    = super::Static;
     type Stability    = super::Stable;
     type Transparency = super::Unenforced;
 }
 
-impl UnsafeOptions for (Alignment, Transparency) {
+impl UnsafeTransmuteOptions for (Alignment, Transparency) {
     type Alignment    = super::Unchecked;
     type Stability    = super::Stable;
     type Transparency = super::Unenforced;
 }
 
-impl UnsafeOptions for (Transparency, Alignment) {
+impl UnsafeTransmuteOptions for (Transparency, Alignment) {
     type Alignment    = super::Unchecked;
     type Stability    = super::Stable;
     type Transparency = super::Unenforced;
 }
 
-impl UnsafeOptions for (Alignment, Stability) {
+impl UnsafeTransmuteOptions for (Alignment, Stability) {
     type Alignment    = super::Unchecked;
     type Stability    = super::Unstable;
     type Transparency = super::Enforced;
 }
 
-impl UnsafeOptions for (Stability, Alignment) {
+impl UnsafeTransmuteOptions for (Stability, Alignment) {
     type Alignment    = super::Unchecked;
     type Stability    = super::Unstable;
     type Transparency = super::Enforced;
 }
 
-impl UnsafeOptions for (Stability, Transparency) {
+impl UnsafeTransmuteOptions for (Stability, Transparency) {
     type Alignment    = super::Static;
     type Stability    = super::Unstable;
     type Transparency = super::Unenforced;
 }
 
-impl UnsafeOptions for (Alignment, Transparency, Stability) {
-    type Alignment    = <Alignment as UnsafeOptions>::Alignment;
-    type Stability    = <Stability as UnsafeOptions>::Stability;
-    type Transparency = <Transparency as UnsafeOptions>::Transparency;
+impl UnsafeTransmuteOptions for (Alignment, Transparency, Stability) {
+    type Alignment    = <Alignment as UnsafeTransmuteOptions>::Alignment;
+    type Stability    = <Stability as UnsafeTransmuteOptions>::Stability;
+    type Transparency = <Transparency as UnsafeTransmuteOptions>::Transparency;
 }
 
-impl UnsafeOptions for (Stability, Alignment, Transparency) {
-    type Alignment    = <Alignment as UnsafeOptions>::Alignment;
-    type Stability    = <Stability as UnsafeOptions>::Stability;
-    type Transparency = <Transparency as UnsafeOptions>::Transparency;
+impl UnsafeTransmuteOptions for (Stability, Alignment, Transparency) {
+    type Alignment    = <Alignment as UnsafeTransmuteOptions>::Alignment;
+    type Stability    = <Stability as UnsafeTransmuteOptions>::Stability;
+    type Transparency = <Transparency as UnsafeTransmuteOptions>::Transparency;
 }
 
-impl UnsafeOptions for (Transparency, Stability, Alignment) {
-    type Alignment    = <Alignment as UnsafeOptions>::Alignment;
-    type Stability    = <Stability as UnsafeOptions>::Stability;
-    type Transparency = <Transparency as UnsafeOptions>::Transparency;
+impl UnsafeTransmuteOptions for (Transparency, Stability, Alignment) {
+    type Alignment    = <Alignment as UnsafeTransmuteOptions>::Alignment;
+    type Stability    = <Stability as UnsafeTransmuteOptions>::Stability;
+    type Transparency = <Transparency as UnsafeTransmuteOptions>::Transparency;
 }
 
-impl UnsafeOptions for (Transparency, Alignment, Stability) {
-    type Alignment    = <Alignment as UnsafeOptions>::Alignment;
-    type Stability    = <Stability as UnsafeOptions>::Stability;
-    type Transparency = <Transparency as UnsafeOptions>::Transparency;
+impl UnsafeTransmuteOptions for (Transparency, Alignment, Stability) {
+    type Alignment    = <Alignment as UnsafeTransmuteOptions>::Alignment;
+    type Stability    = <Stability as UnsafeTransmuteOptions>::Stability;
+    type Transparency = <Transparency as UnsafeTransmuteOptions>::Transparency;
 }
 
-impl UnsafeOptions for (Alignment, Stability, Transparency) {
-    type Alignment    = <Alignment as UnsafeOptions>::Alignment;
-    type Stability    = <Stability as UnsafeOptions>::Stability;
-    type Transparency = <Transparency as UnsafeOptions>::Transparency;
+impl UnsafeTransmuteOptions for (Alignment, Stability, Transparency) {
+    type Alignment    = <Alignment as UnsafeTransmuteOptions>::Alignment;
+    type Stability    = <Stability as UnsafeTransmuteOptions>::Stability;
+    type Transparency = <Transparency as UnsafeTransmuteOptions>::Transparency;
 }
 
-impl UnsafeOptions for (Stability, Transparency, Alignment) {
-    type Alignment    = <Alignment as UnsafeOptions>::Alignment;
-    type Stability    = <Stability as UnsafeOptions>::Stability;
-    type Transparency = <Transparency as UnsafeOptions>::Transparency;
+impl UnsafeTransmuteOptions for (Stability, Transparency, Alignment) {
+    type Alignment    = <Alignment as UnsafeTransmuteOptions>::Alignment;
+    type Stability    = <Stability as UnsafeTransmuteOptions>::Stability;
+    type Transparency = <Transparency as UnsafeTransmuteOptions>::Transparency;
 }
