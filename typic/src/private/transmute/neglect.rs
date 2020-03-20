@@ -9,6 +9,7 @@ pub struct Transparency;
 /// in-memory representations.
 pub struct Stability;
 
+/// Options for safe and unsafe transmutation.
 pub trait TransmuteOptions: UnsafeTransmuteOptions {
     type Stability;
 }
@@ -30,6 +31,7 @@ where
     type Stability      = <O as TransmuteOptions>::Stability;
 }
 
+/// Options for unsafe transmutation.
 pub trait UnsafeTransmuteOptions {
     type Alignment;
     type Transparency;
