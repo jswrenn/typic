@@ -15,6 +15,11 @@ pub struct Enforced;
 /// Transparency is not enforced.
 pub struct Unenforced;
 
+/// Validity is always enforced.
+pub struct AlwaysValid;
+/// Some invalidity is allowed.
+pub struct MaybeInvalid;
+
 pub mod neglect;
 
 #[rustfmt::skip]
@@ -144,6 +149,7 @@ where
         <O as neglect::UnsafeTransmuteOptions>::Alignment,
         <O as neglect::UnsafeTransmuteOptions>::Transparency,
         <O as neglect::UnsafeTransmuteOptions>::Stability,
+        <O as neglect::UnsafeTransmuteOptions>::Validity,
       >,
     O: neglect::TransmuteOptions,
 {
@@ -212,6 +218,7 @@ where
         <O as neglect::UnsafeTransmuteOptions>::Alignment,
         <O as neglect::UnsafeTransmuteOptions>::Transparency,
         <O as neglect::UnsafeTransmuteOptions>::Stability,
+        <O as neglect::UnsafeTransmuteOptions>::Validity,
       >,
     O: neglect::UnsafeTransmuteOptions,
 {
@@ -242,7 +249,8 @@ where
         Variant,
         <O as neglect::UnsafeTransmuteOptions>::Alignment,
         <O as neglect::UnsafeTransmuteOptions>::Transparency,
-        <O as neglect::UnsafeTransmuteOptions>::Stability>,
+        <O as neglect::UnsafeTransmuteOptions>::Stability,
+        <O as neglect::UnsafeTransmuteOptions>::Validity>,
     O: neglect::UnsafeTransmuteOptions,
 {
     let to = mem::transmute_copy(&from);

@@ -7,7 +7,7 @@ use crate::private::bytelevel::{
 use crate::private::layout::{Layout, AlignedTo};
 use crate::private::num::{self, UInt, UTerm};
 use super::from_type::FromType;
-use super::{Variant, Invariant, Static, Unchecked, Enforced, Unenforced, Stable, Unstable};
+use super::{Variant, Invariant, Static, Unchecked, Enforced, Unenforced, Stable, Unstable, AlwaysValid, MaybeInvalid};
 use crate::stability::*;
 mod consume;
 pub use consume::Consume;
@@ -19,67 +19,45 @@ pub use flatten::Flatten;
 /// `Self`.
 pub unsafe trait FromLayout<
   SourceLayout,
-  // Can bit-validity be widened?
-  Variance,
-  // Is alignment checked?
-  Alignment,
-  // Is library safety checked?
-  Transparency,
-  // Must the source and destination types have recursively stable ABIs?
-  Stability,
+  Options,
 > {}
 
 /// ANYTHING -> []
 unsafe impl<
   SourceLayout,
-  Variance,
-  Alignment,
-  Transparency,
-  Stability,
+  Options
 >
 FromLayout<
   SourceLayout,
-  Variance,
-  Alignment,
-  Transparency,
-  Stability,
+  Options
 > for PNil {}
 
 #[rustfmt::skip] unsafe impl<
   UVis, UKind, URest,
-  Variance,
-  Alignment,
-  Transparency,
-  Stability,
+  Options,
 >
 FromLayout<PNil,
-  Variance,
-  Alignment,
-  Transparency,
-  Stability,
+  Options
 > for PCons<Bytes<UVis, UKind, UTerm>, URest>
 where
-    URest: FromLayout<PNil, Variance, Alignment, Transparency, Stability>,
+    URest: FromLayout<PNil, Options>,
 {}
 
 #[rustfmt::skip] unsafe impl<
   UVis, U, URest,
-  Variance,
-  Alignment,
-  Transparency,
-  Stability,
-> FromLayout<PNil, Variance, Alignment, Transparency, Stability>
+  Options,
+> FromLayout<PNil, Options>
          for PCons<Array<UVis, U, UTerm>, URest>
 where
-    URest: FromLayout<PNil, Variance, Alignment, Transparency, Stability>,
+    URest: FromLayout<PNil, Options>,
 {}
 
 
 /// ```rust
-/// use typic::private::transmute::{Stable, Variant, Static, Enforced, from_layout::FromLayout};
+/// use typic::private::transmute::{Stable, Variant, Static, Enforced, AlwaysValid, from_layout::FromLayout};
 /// use typic::private::bytelevel::{PCons, PNil, slot::{InitializedSlot, Pub, Priv}};
 /// use typic::private::num::U1;
-/// fn can_transmute<T, U: FromLayout<T, Variance, Static, Transparency, Stable>, Variance, Transparency>() {}
+/// fn can_transmute<T, U: FromLayout<T, (Variance, Static, Transparency, Stable, AlwaysValid)>, Variance, Transparency>() {}
 ///
 /// can_transmute::<
 ///   PCons<InitializedSlot<Pub, U1>, PNil>,
@@ -96,53 +74,53 @@ mod bytes_to {
 
     /// [Bytes|_] -> [Array|_]
     #[rustfmt::skip] unsafe impl<TVis, TKind, TSize, TRest, UVis, U, USize, URest,
-        Variance, Alignment, Transparency, Stability,
+        Options,
     >
-    FromLayout<PCons<Bytes<TVis, TKind, TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+    FromLayout<PCons<Bytes<TVis, TKind, TSize>, TRest>, Options>
            for PCons<Array<UVis, U, USize>, URest>
     where
         Self: Flatten,
         <Self as Flatten>::Output:
-          FromLayout<PCons<Bytes<TVis, TKind, TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+          FromLayout<PCons<Bytes<TVis, TKind, TSize>, TRest>, Options>
     {}
 
     /// [Bytes|_] -> [Bytes|_]
     #[rustfmt::skip] unsafe impl<TVis, TKind, TSize, TRest, UVis, UKind, USize, URest,
-      Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Bytes<TVis, TKind, TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+      Variance, Alignment, Transparency, Stability, Validity>
+    FromLayout<PCons<Bytes<TVis, TKind, TSize>, TRest>, (Variance, Alignment, Transparency, Stability, Validity)>
            for PCons<Bytes<UVis, UKind, USize>, URest>
     where
-        Bytes<UVis, UKind, USize>: BytesFromBytes<Bytes<TVis, TKind, TSize>, Variance, Transparency>,
+        Bytes<UVis, UKind, USize>: BytesFromBytes<Bytes<TVis, TKind, TSize>, Variance, Transparency, Validity>,
         USize: Consume<TSize>,
 
         Bytes<TVis, TKind, <USize as Consume<TSize>>::TSize>: blv::Add<TRest>,
         Bytes<UVis, UKind, <USize as Consume<TSize>>::USize>: blv::Add<URest>,
 
         blv::Sum<Bytes<UVis, UKind, <USize as Consume<TSize>>::USize>, URest>:
-          FromLayout<blv::Sum<Bytes<TVis, TKind, <USize as Consume<TSize>>::TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+          FromLayout<blv::Sum<Bytes<TVis, TKind, <USize as Consume<TSize>>::TSize>, TRest>, (Variance, Alignment, Transparency, Stability, Validity)>
     {}
 
     /// Implemented if a byte of `TKind` is transmutable to a byte of `Self`.
-    pub trait BytesFromBytes<T, Variance, Transparency> {}
+    pub trait BytesFromBytes<T, Variance, Transparency, Validity> {}
 
     macro_rules! constrain {
       ($($TKind: path => $UKind: path,)*) => {
         $(
           /// Regardless of variance and transparency, this `pub` to `pub` conversion is safe.
-          impl<A, B, C, D, Variance, Transparency>
-          BytesFromBytes<Bytes<Pub,  $TKind, num::UInt<A, B>>, Variance, Transparency>
+          impl<A, B, C, D, Variance, Transparency, Validity>
+          BytesFromBytes<Bytes<Pub,  $TKind, num::UInt<A, B>>, Variance, Transparency, Validity>
                      for Bytes<Pub,  $UKind, num::UInt<C, D>>
           {}
 
           /// A `priv` to `pub` conversion is safe only if the transmutation is variant.
-          impl<A, B, C, D, Transparency>
-          BytesFromBytes<Bytes<Priv, $TKind, num::UInt<A, B>>, Variant, Transparency>
+          impl<A, B, C, D, Transparency, Validity>
+          BytesFromBytes<Bytes<Priv, $TKind, num::UInt<A, B>>, Variant, Transparency, Validity>
                      for Bytes<Pub,  $UKind, num::UInt<C, D>>
           {}
 
           /// A `priv`/`pub` to `priv` conversion is only safe if transparency is unchecked.
-          impl<A, B, C, D, TVis, Variance>
-          BytesFromBytes<Bytes<TVis, $TKind, num::UInt<A, B>>, Variance, Unenforced>
+          impl<A, B, C, D, TVis, Variance, Validity>
+          BytesFromBytes<Bytes<TVis, $TKind, num::UInt<A, B>>, Variance, Unenforced, Validity>
                      for Bytes<Priv, $UKind, num::UInt<C, D>>
           {}
         )*
@@ -159,20 +137,20 @@ mod bytes_to {
       ($($TKind: path => $UKind: path,)*) => {
         $(
           /// Regardless of variance and transparency, this `pub` to `pub` conversion is safe.
-          impl<A, B, C, D, Transparency>
-          BytesFromBytes<Bytes<Pub,  $TKind, num::UInt<A, B>>, Variant, Transparency>
+          impl<A, B, C, D, Transparency, Validity>
+          BytesFromBytes<Bytes<Pub,  $TKind, num::UInt<A, B>>, Variant, Transparency, Validity>
                      for Bytes<Pub,  $UKind, num::UInt<C, D>>
           {}
 
           /// A `priv` to `pub` conversion is safe only if the transmutation is variant.
-          impl<A, B, C, D, Transparency>
-          BytesFromBytes<Bytes<Priv, $TKind, num::UInt<A, B>>, Variant, Transparency>
+          impl<A, B, C, D, Transparency, Validity>
+          BytesFromBytes<Bytes<Priv, $TKind, num::UInt<A, B>>, Variant, Transparency, Validity>
                      for Bytes<Pub,  $UKind, num::UInt<C, D>>
           {}
 
           /// A `priv`/`pub` to `priv` conversion is only safe if transparency is unchecked.
-          impl<A, B, C, D, TVis>
-          BytesFromBytes<Bytes<TVis, $TKind, num::UInt<A, B>>, Variant, Unenforced>
+          impl<A, B, C, D, TVis, Validity>
+          BytesFromBytes<Bytes<TVis, $TKind, num::UInt<A, B>>, Variant, Unenforced, Validity>
                      for Bytes<Priv, $UKind, num::UInt<C, D>>
           {}
         )*
@@ -187,16 +165,16 @@ mod bytes_to {
 
 
     // If either sizes are empty, `BytesFromBytes` vacuously holds.
-    impl<TKind, UKind, Variance, Transparency> BytesFromBytes<Bytes<Pub, TKind, num::UTerm>, Variance, Transparency> for Bytes<Pub, UKind, num::UTerm> {}
-    impl<TKind, A, B, UKind, Variance, Transparency> BytesFromBytes<Bytes<Pub, TKind, num::UInt<A, B>>, Variance, Transparency> for Bytes<Pub, UKind, num::UTerm> {}
-    impl<TKind, UKind, A, B, Variance, Transparency> BytesFromBytes<Bytes<Pub, TKind, num::UTerm>, Variance, Transparency> for Bytes<Pub, UKind, num::UInt<A, B>> {}
+    impl<TKind, UKind, Variance, Transparency, Validity> BytesFromBytes<Bytes<Pub, TKind, num::UTerm>, Variance, Transparency, Validity> for Bytes<Pub, UKind, num::UTerm> {}
+    impl<TKind, A, B, UKind, Variance, Transparency, Validity> BytesFromBytes<Bytes<Pub, TKind, num::UInt<A, B>>, Variance, Transparency, Validity> for Bytes<Pub, UKind, num::UTerm> {}
+    impl<TKind, UKind, A, B, Variance, Transparency, Validity> BytesFromBytes<Bytes<Pub, TKind, num::UTerm>, Variance, Transparency, Validity> for Bytes<Pub, UKind, num::UInt<A, B>> {}
 
     /// [Bytes|_] -> [Reference|_]
-    #[rustfmt::skip] unsafe impl<'u, TVis, TKind, TRest, UVis, UK, U, URest, Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Bytes<TVis, TKind, num::UTerm>, TRest>, Variance, Alignment, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<'u, TVis, TKind, TRest, UVis, UK, U, URest, Options>
+    FromLayout<PCons<Bytes<TVis, TKind, num::UTerm>, TRest>, Options>
          for PCons<Reference<'u, UVis, UK, U>, URest>
     where
-        Self: FromLayout<TRest, Variance, Alignment, Transparency, Stability>,
+        Self: FromLayout<TRest, Options>,
     {}
 }
 
@@ -204,35 +182,35 @@ mod array_to {
     use super::*;
 
     /// [Array|_] -> [Array|_]
-    #[rustfmt::skip] unsafe impl<TVis, T, TSize, TRest, UVis, U, USize, URest, Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Array<TVis, T, TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<TVis, T, TSize, TRest, UVis, U, USize, URest, Options>
+    FromLayout<PCons<Array<TVis, T, TSize>, TRest>, Options>
          for PCons<Array<UVis, U, USize>, URest>
     where
         PCons<Array<TVis, T, TSize>, TRest>: Flatten,
         PCons<Array<UVis, U, USize>, URest>: Flatten,
 
         <PCons<Array<UVis, U, USize>, URest> as Flatten>::Output:
-            FromLayout<<PCons<Array<TVis, T, TSize>, TRest> as Flatten>::Output, Variance, Alignment, Transparency, Stability>,
+            FromLayout<<PCons<Array<TVis, T, TSize>, TRest> as Flatten>::Output, Options>,
     {}
 
     /// [Array|_] -> [Bytes|_]
-    #[rustfmt::skip] unsafe impl<TVis, T, TSize, TRest, UVis, UKind, USize, URest, Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Array<TVis, T, TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<TVis, T, TSize, TRest, UVis, UKind, USize, URest, Options>
+    FromLayout<PCons<Array<TVis, T, TSize>, TRest>, Options>
          for PCons<Bytes<UVis, UKind, USize>, URest>
     where
         PCons<Array<TVis, T, TSize>, TRest>: Flatten,
 
-        Self: FromLayout<<PCons<Array<TVis, T, TSize>, TRest> as Flatten>::Output, Variance, Alignment, Transparency, Stability>,
+        Self: FromLayout<<PCons<Array<TVis, T, TSize>, TRest> as Flatten>::Output, Options>,
     {}
 
     /// [Array|_] -> [Reference|_]
-    #[rustfmt::skip] unsafe impl<'u, TVis, T, TSize, TRest, UK, UVis, U, URest, Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Array<TVis, T, TSize>, TRest>, Variance, Alignment, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<'u, TVis, T, TSize, TRest, UK, UVis, U, URest, Options>
+    FromLayout<PCons<Array<TVis, T, TSize>, TRest>, Options>
          for PCons<Reference<'u, UVis, UK, U>, URest>
     where
         PCons<Array<TVis, T, TSize>, TRest>: Flatten,
 
-        Self: FromLayout<<PCons<Array<TVis, T, TSize>, TRest> as Flatten>::Output, Variance, Alignment, Transparency, Stability>,
+        Self: FromLayout<<PCons<Array<TVis, T, TSize>, TRest> as Flatten>::Output, Options>,
     {}
 }
 
@@ -240,21 +218,21 @@ mod reference_to {
     use super::*;
 
     /// [Reference|_] -> [Array|_]
-    #[rustfmt::skip] unsafe impl<'t, TVis, T, TK, TRest, UVis, U, USize, URest, Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Variance, Alignment, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<'t, TVis, T, TK, TRest, UVis, U, USize, URest, Options>
+    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Options>
          for PCons<Array<UVis, U, USize>, URest>
     where
         Self: Flatten,
         <Self as Flatten>::Output:
-          FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Variance, Alignment, Transparency, Stability>,
+          FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Options>,
     {}
 
     /// [Reference|_] -> [Bytes|_]
-    #[rustfmt::skip] unsafe impl<'t, TVis, T, TK, TRest, UVis, UKind, USize, URest, Variance, Alignment, Transparency, Stability>
-    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Variance, Alignment, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<'t, TVis, T, TK, TRest, UVis, UKind, USize, URest, Options>
+    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Options>
          for PCons<Bytes<UVis, UKind, USize>, URest>
     where
-        Self: FromLayout<ReferenceBytes<TVis, TRest>, Variance, Alignment, Transparency, Stability>,
+        Self: FromLayout<ReferenceBytes<TVis, TRest>, Options>,
     {}
 
     pub trait FromMutability<T> {}
@@ -273,33 +251,33 @@ mod reference_to {
     impl<T, U> FromAlignment<T, Unstable> for U {}
 
     /// [Reference|_] -> [Reference|_]
-    #[rustfmt::skip] unsafe impl<'t, 'u, TVis, T, TK, TRest, UVis, U, UK, URest, Variance, Transparency, Stability>
-    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Variance, Unchecked, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<'t, 'u, TVis, T, TK, TRest, UVis, U, UK, URest, Variance, Transparency, Stability, Validity>
+    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, (Variance, Unchecked, Transparency, Stability, Validity)>
            for PCons<Reference<'u, UVis, UK, U>, URest>
     where
         't: 'u,
         UK: FromMutability<TK>,
         U: Never<Increase, Alignment>,
         T: Never<Decrease, Alignment>,
-        U: FromType<T, Invariant, Unchecked, Transparency, Stability>,
+        U: FromType<T, Invariant, Unchecked, Transparency, Stability, Validity>,
     {}
 
     /// `[Reference|_] -> [Reference|_]`
     /// ```rust
-    /// use typic::private::transmute::{Stable, Variant, Static, Enforced, from_layout::FromLayout};
+    /// use typic::private::transmute::{Stable, Variant, Static, Enforced, AlwaysValid, from_layout::FromLayout};
     /// use typic::private::bytelevel::{PCons, PNil, slot::{Pub, Priv, SharedRef}};
-    /// fn can_transmute<T, U: FromLayout<T, Variant, Static, Enforced, Stable>>() {}
+    /// fn can_transmute<T, U: FromLayout<T, (Variant, Static, Enforced, Stable, AlwaysValid)>>() {}
     ///
     /// type T = SharedRef<'static, Pub, ()>;
     /// can_transmute::<PCons<T, PNil>, PCons<T, PNil>>();
     /// ```
-    #[rustfmt::skip] unsafe impl<'t, 'u, TVis, T, TK, TRest, UVis, U, UK, URest, Variance, Transparency, Stability>
-    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, Variance, Static, Transparency, Stability>
+    #[rustfmt::skip] unsafe impl<'t, 'u, TVis, T, TK, TRest, UVis, U, UK, URest, Variance, Transparency, Stability, Validity>
+    FromLayout<PCons<Reference<'t, TVis, TK, T>, TRest>, (Variance, Static, Transparency, Stability, Validity)>
            for PCons<Reference<'u, UVis, UK, U>, URest>
     where
         't: 'u,
         UK: FromMutability<TK>,
-        U: FromAlignment<T, Stability> + AlignedTo<T> + FromType<T, Invariant, Static, Transparency, Stability>,
+        U: FromAlignment<T, Stability> + AlignedTo<T> + FromType<T, Invariant, Static, Transparency, Stability, Validity>,
     {}
 }
 
@@ -308,7 +286,7 @@ mod reference_to {
 mod test {
   use super::*;
 
-  fn subsumes<T, U: FromLayout<T, Variant, Static, Enforced, Stable>>()
+  fn subsumes<T, U: FromLayout<T, (Variant, Static, Enforced, Stable, AlwaysValid)>>()
   {}
 
   macro_rules! P {
