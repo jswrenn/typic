@@ -244,8 +244,8 @@ mod reference_to {
 
     impl<T, U> FromAlignment<T, Stable> for U
     where
-        U: Never<Increase, Alignment>,
-        T: Never<Decrease, Alignment>,
+        U: Bound<Upper>,
+        T: Bound<Lower>,
     {}
 
     impl<T, U> FromAlignment<T, Unstable> for U {}
@@ -257,8 +257,6 @@ mod reference_to {
     where
         't: 'u,
         UK: FromMutability<TK>,
-        U: Never<Increase, Alignment>,
-        T: Never<Decrease, Alignment>,
         U: FromType<T, Invariant, Unchecked, Transparency, Stability, Validity>,
     {}
 

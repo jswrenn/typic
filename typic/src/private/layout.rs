@@ -9,9 +9,10 @@ mod padding;
 pub use aligned_to::AlignedTo;
 use into_bytelevel::IntoByteLevel;
 use padding::PaddingNeededForField;
+use crate::private::highlevel::Public;
 
 /// The actual memory layout characteristics of `Self`.
-pub trait Layout<Visibility> {
+pub trait Layout<Visibility=Public> {
     /// The actual alignment of `Self`.
     type Align: Unsigned;
 
