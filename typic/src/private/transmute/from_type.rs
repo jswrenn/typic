@@ -35,8 +35,21 @@ where
 unsafe impl<T, U, Variance, Alignment, Transparency, Validity>
 FromType<T, Variance, Alignment, Transparency, Stable, Validity> for U
 where
-    T: Never<Increase, Size> + Layout<Public>,
-    U: Never<Decrease, Size> + Layout<Public>,
+    T: Bound<Upper> + Layout<Public>,
+    U: Bound<Lower> + Layout<Public>,
+
+    // If stability is being enforced, then
+    // the widest extent of the source type
+    // must be transmutable into the narrowest
+    // extent of the destination type.
+    <U as Bound<Lower>>::Type:
+      FromType<<T as Bound<Upper>>::Type,
+        Variance,
+        Alignment,
+        Transparency,
+        Unstable,
+        Validity>,
+
     <U as Layout<Public>>::ByteLevel: FromLayout<<T as Layout<Public>>::ByteLevel,
       (Variance,
       Alignment,

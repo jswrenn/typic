@@ -75,6 +75,7 @@ pub mod docs {
     }
 }
 
+
 #[doc(hidden)]
 #[deprecated(note = "TODO")]
 pub enum TODO {}
@@ -161,7 +162,7 @@ pub mod layout {
     use crate::internal::{Public, Private};
 
     /// Type-level information about type representation.
-    pub trait Layout {
+    pub trait Layout: layout::Layout<Public> {
         /// The size of `Self`.
         ///
         /// ```

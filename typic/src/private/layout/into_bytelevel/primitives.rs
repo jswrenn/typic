@@ -11,6 +11,8 @@ use crate::private::layout::Layout;
 use crate::private::num::*;
 use crate::private::target::PointerWidth;
 
+use crate::stability::{self, Bound};
+
 macro_rules! primitive_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
         $(
@@ -20,7 +22,9 @@ macro_rules! primitive_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl<D: Direction, A: Aspect> Never<D, A> for $ty {}
+            impl<D: Direction> Bound<D> for $ty {
+                type Type = Self;
+            }
 
             impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for $ty
             where
@@ -76,7 +80,9 @@ macro_rules! nonzero_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl<D: Direction, A: Aspect> Never<D, A> for $ty {}
+            impl<D: Direction> Bound<D> for $ty {
+                type Type = Self;
+            }
 
             impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for $ty
             where
@@ -115,7 +121,9 @@ impl Type for () {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<D: Direction, A: Aspect> Never<D, A> for () {}
+impl<D: Direction> Bound<D> for () {
+    type Type = Self;
+}
 
 impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for ()
 where
@@ -127,7 +135,10 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, D: Direction, A: Aspect, T> Never<D, A> for &'a T {}
+impl<'a, D: Direction, T> Bound<D> for &'a T
+{
+    type Type = Self;
+}
 
 #[rustfmt::skip]
 impl<'a, T> Type for &'a T {
@@ -146,7 +157,10 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, D: Direction, A: Aspect, T> Never<D, A> for &'a mut T {}
+impl<'a, D: Direction, T> Bound<D> for &'a mut T
+{
+    type Type = Self;
+}
 
 #[rustfmt::skip]
 impl<'a, T> Type for &'a mut T {
@@ -166,7 +180,9 @@ where
     type Align = PointerWidth;
 }
 
-impl<D: Direction, A: Aspect, T> Never<D, A> for *const T {}
+impl<D: Direction, T> Bound<D> for *const T {
+    type Type = Self;
+}
 
 #[rustfmt::skip]
 impl<T> Type for *const T {
@@ -185,7 +201,9 @@ where
     type Align = PointerWidth;
 }
 
-impl<D: Direction, A: Aspect, T> Never<D, A> for *mut T {}
+impl<D: Direction, T> Bound<D> for *mut T {
+    type Type = Self;
+}
 
 #[rustfmt::skip]
 impl<T> Type for *mut T {
@@ -211,7 +229,9 @@ impl<T> Type for AtomicPtr<T> {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<D: Direction, A: Aspect, T> Never<D, A> for AtomicPtr<T> {}
+impl<D: Direction, T> Bound<D> for AtomicPtr<T> {
+    type Type = Self;
+}
 
 impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for AtomicPtr<T>
 where
@@ -235,9 +255,10 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<D: Direction, A: Aspect, T> Never<D, A> for Cell<T>
-where T: Never<D, A>
-{}
+impl<D: Direction, T: Bound<D>> Bound<D> for Cell<T>
+{
+    type Type = <T as Bound<D>>::Type;
+}
 
 #[rustfmt::skip]
 impl<T> Type for UnsafeCell<T>
@@ -249,9 +270,10 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<D: Direction, A: Aspect, T> Never<D, A> for UnsafeCell<T>
-where T: Never<D, A>
-{}
+impl<D: Direction, T: Bound<D>> Bound<D> for UnsafeCell<T>
+{
+    type Type = <T as Bound<D>>::Type;
+}
 
 macro_rules! array_layout {
   ($($n: expr, $t: ty);*) => {
@@ -262,9 +284,12 @@ macro_rules! array_layout {
             #[doc(hidden)] type HighLevel = Self;
         }
 
-        impl<D: Direction, A: Aspect, T> Never<D, A> for [T; $n]
-        where T: Never<D, A>
-        {}
+        impl<D: Direction, T: Bound<D>> Bound<D> for [T; $n]
+        where
+            [<T as Bound<D>>::Type; $n]: Layout
+        {
+            type Type = [<T as Bound<D>>::Type; $n];
+        }
 
         impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
             for [T; $n]
@@ -330,11 +355,14 @@ where
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<D: Direction, A: Aspect, T, N> Never<D, A> for GenericArray<T, N>
+impl<D: Direction, T, N> Bound<D> for GenericArray<T, N>
 where
-    N: ArrayLength<T>,
-    T: Never<D, A>,
-{}
+    N: ArrayLength<T> + ArrayLength<<T as Bound<D>>::Type>,
+    T: Bound<D>,
+    GenericArray<<T as Bound<D>>::Type, N>: Layout,
+{
+    type Type = GenericArray<<T as Bound<D>>::Type, N>;
+}
 
 impl<ReprAlign, ReprPacked, Visibility, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
     for GenericArray<T, N>

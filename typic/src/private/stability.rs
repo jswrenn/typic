@@ -4,70 +4,41 @@
 //! use typic::{self, stability::*};
 //!
 //! #[typic::repr(C)]
+//! #[derive(StableABI)]
 //! struct Foo(u8, u16, u32);
-//!
-//! // Increasing `Foo`'s size from 8 bytes is a breaking change.
-//! impl Never<Increase, Alignment> for Foo {}
-//!
-//! // Decreasing `Foo`'s minimum alignment from 4 is a breaking change. 
-//! impl Never<Decrease, Size>      for Foo {}
-//!
-//! // Increasing `Foo`'s bit-validity is a breaking change. 
-//! impl Never<Increase, Validity>  for Foo {}
 //! ```
 
-/// The minimum alignment aspect of a type's layout.
-pub enum Alignment {}
-
-/// The size aspect of a type's layout.
-pub enum Size {}
-
-/// The validity aspect of a type's layout.
-pub enum Validity {}
-
-/// Aspects of a type's layout.
-///
-/// The layout of a type has three aspects:
-/// 1. [Minimum Alignment][Align]
-/// 2. [Size][Size]
-/// 3. [Validity][Validity]
-pub trait Aspect: private::Sealed {}
-
-impl Aspect for Alignment     {}
-impl Aspect for Size      {}
-impl Aspect for Validity  {}
+//use crate::private::layout::{self, Layout};
+use crate::layout::Layout;
+use crate::private::highlevel::Public;
 
 /// Implements all stability restrictions on a type.
 pub use typic_derive::StableABI;
 
 /// Increasing the given aspect is a breaking change.
-pub enum Increase {}
+pub enum Upper {}
 
 /// Decreasing the given aspect is a breaking change.
-pub enum Decrease {}
+pub enum Lower {}
 
 /// The directionality of the layout guarantee.
 pub trait Direction: private::Sealed {}
 
-impl Direction for Increase {}
-impl Direction for Decrease {}
+impl Direction for Upper {}
+impl Direction for Lower {}
 
-/// Changing the `Aspect` in the `Direction` for `Self` is a breaking change.
-pub trait Never<Direction, Aspect>
+pub trait Bound<Direction>
 where
-    Direction:  self::Direction,
-    Aspect:     self::Aspect,
-{}
+    Direction: self::Direction
+{
+    type Type: Layout;
+}
 
 mod private {
     use super::*;
 
     pub trait Sealed {}
-    
-    impl Sealed for Alignment   {}
-    impl Sealed for Size        {}
-    impl Sealed for Validity    {}
-    
-    impl Sealed for Increase    {}
-    impl Sealed for Decrease    {}
+
+    impl Sealed for Upper       {}
+    impl Sealed for Lower       {}
 }
