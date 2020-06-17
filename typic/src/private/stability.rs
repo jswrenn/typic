@@ -13,21 +13,21 @@ use crate::layout::Layout;
 use crate::transmute::{self, neglect, TransmuteFrom, TransmuteInto};
 use crate::private::highlevel::Public;
 
-/// Implements all stability restrictions on a type.
+/// Implements [`TransmutableInto`] and [`TransmutableFrom`] for a
+/// type, using that type as its own ABI bound.
+///
+/// You must not make any changes to this type that narrows the
+/// visibility of its fields or changes its layout.
 pub use typic_derive::StableABI;
 
-/// `Self` is always transmutable into `Type`.
+/// Assert that `Self` is always transmutable into `Type`.
 pub trait TransmutableInto
-//  : Bound<Lower>
-//  + TransmuteFrom<<Self as Bound<Lower>>::Type, neglect::Stability>
 {
     type Type: Layout;
 }
 
-/// `Self` is always transmutable from `Type`.
+/// Assert that `Self` is always transmutable from `Type`.
 pub trait TransmutableFrom
-//  : Bound<Upper>
-//  + TransmuteInto<<Self as Bound<Lower>>::Type, neglect::Stability>
 {
     type Type: Layout;
 }

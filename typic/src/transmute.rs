@@ -1,7 +1,7 @@
 //! Traits for safe and sound transmutation.
 //!
-//! [soundness]: crate::sound#when-is-a-transmutation-sound
-//! [safety]: crate::safe
+//! [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+//! [safety]: crate::transmute::safe_transmutation
 //!
 //! ## Three Types of Transmutation
 //!
