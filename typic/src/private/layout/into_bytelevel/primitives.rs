@@ -22,11 +22,11 @@ macro_rules! primitive_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl TransmutableFrom for $ty {
+            unsafe impl TransmutableFrom for $ty {
                 type Type = Self;
             }
 
-            impl TransmutableInto for $ty {
+            unsafe impl TransmutableInto for $ty {
                 type Type = Self;
             }
 
@@ -84,11 +84,11 @@ macro_rules! nonzero_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl TransmutableFrom for $ty {
+            unsafe impl TransmutableFrom for $ty {
                 type Type = Self;
             }
 
-            impl TransmutableInto for $ty {
+            unsafe impl TransmutableInto for $ty {
                 type Type = Self;
             }
 
@@ -129,11 +129,11 @@ impl Type for () {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl TransmutableFrom for () {
+unsafe impl TransmutableFrom for () {
     type Type = Self;
 }
 
-impl TransmutableInto for () {
+unsafe impl TransmutableInto for () {
     type Type = Self;
 }
 
@@ -147,12 +147,12 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, T> TransmutableFrom for &'a T
+unsafe impl<'a, T> TransmutableFrom for &'a T
 {
     type Type = Self;
 }
 
-impl<'a, T> TransmutableInto for &'a T
+unsafe impl<'a, T> TransmutableInto for &'a T
 {
     type Type = Self;
 }
@@ -174,12 +174,12 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, T> TransmutableFrom for &'a mut T
+unsafe impl<'a, T> TransmutableFrom for &'a mut T
 {
     type Type = Self;
 }
 
-impl<'a, T> TransmutableInto for &'a mut T
+unsafe impl<'a, T> TransmutableInto for &'a mut T
 {
     type Type = Self;
 }
@@ -202,11 +202,11 @@ where
     type Align = PointerWidth;
 }
 
-impl<T> TransmutableFrom for *const T {
+unsafe impl<T> TransmutableFrom for *const T {
     type Type = Self;
 }
 
-impl<T> TransmutableInto for *const T {
+unsafe impl<T> TransmutableInto for *const T {
     type Type = Self;
 }
 
@@ -227,11 +227,11 @@ where
     type Align = PointerWidth;
 }
 
-impl<T> TransmutableFrom for *mut T {
+unsafe impl<T> TransmutableFrom for *mut T {
     type Type = Self;
 }
 
-impl<T> TransmutableInto for *mut T {
+unsafe impl<T> TransmutableInto for *mut T {
     type Type = Self;
 }
 
@@ -259,11 +259,11 @@ impl<T> Type for AtomicPtr<T> {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T> TransmutableFrom for AtomicPtr<T> {
+unsafe impl<T> TransmutableFrom for AtomicPtr<T> {
     type Type = Self;
 }
 
-impl<T> TransmutableInto for AtomicPtr<T> {
+unsafe impl<T> TransmutableInto for AtomicPtr<T> {
     type Type = Self;
 }
 
@@ -289,12 +289,12 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<T: TransmutableFrom> TransmutableFrom for Cell<T>
+unsafe impl<T: TransmutableFrom> TransmutableFrom for Cell<T>
 {
     type Type = <T as TransmutableFrom>::Type;
 }
 
-impl<T: TransmutableInto> TransmutableInto for Cell<T>
+unsafe impl<T: TransmutableInto> TransmutableInto for Cell<T>
 {
     type Type = <T as TransmutableInto>::Type;
 }
@@ -309,12 +309,12 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<T: TransmutableInto> TransmutableInto for UnsafeCell<T>
+unsafe impl<T: TransmutableInto> TransmutableInto for UnsafeCell<T>
 {
     type Type = <T as TransmutableInto>::Type;
 }
 
-impl<T: TransmutableFrom> TransmutableFrom for UnsafeCell<T>
+unsafe impl<T: TransmutableFrom> TransmutableFrom for UnsafeCell<T>
 {
     type Type = <T as TransmutableFrom>::Type;
 }
@@ -328,14 +328,14 @@ macro_rules! array_layout {
             #[doc(hidden)] type HighLevel = Self;
         }
 
-        impl<T: TransmutableFrom> TransmutableFrom for [T; $n]
+        unsafe impl<T: TransmutableFrom> TransmutableFrom for [T; $n]
         where
             [<T as TransmutableFrom>::Type; $n]: Layout
         {
             type Type = [<T as TransmutableFrom>::Type; $n];
         }
 
-        impl<T: TransmutableInto> TransmutableInto for [T; $n]
+        unsafe impl<T: TransmutableInto> TransmutableInto for [T; $n]
         where
             [<T as TransmutableInto>::Type; $n]: Layout
         {
@@ -406,7 +406,7 @@ where
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<T, N> TransmutableFrom for GenericArray<T, N>
+unsafe impl<T, N> TransmutableFrom for GenericArray<T, N>
 where
     N: ArrayLength<T> + ArrayLength<<T as TransmutableFrom>::Type>,
     T: TransmutableFrom,
@@ -415,7 +415,7 @@ where
     type Type = GenericArray<<T as TransmutableFrom>::Type, N>;
 }
 
-impl<T, N> TransmutableInto for GenericArray<T, N>
+unsafe impl<T, N> TransmutableInto for GenericArray<T, N>
 where
     N: ArrayLength<T> + ArrayLength<<T as TransmutableInto>::Type>,
     T: TransmutableInto,
