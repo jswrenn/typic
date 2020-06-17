@@ -29,11 +29,11 @@ pub mod from_type;
 pub mod from_layout;
 
 /// The source and destination types **must** have
-/// [stable ABIs][crate::marker::StableABI].
+/// [stable ABIs][crate::stability::StableABI].
 pub struct Stable;
 
 /// The source and destination types **may not** both have
-/// [stable ABIs][crate::marker::StableABI].
+/// [stable ABIs][crate::stability::StableABI].
 ///
 /// A transmutation between types with unstable ABIs is not necessarily
 /// unsafe, but the creators of the source and destination types do **not**
@@ -52,8 +52,8 @@ pub struct Unstable;
 ///
 /// [`TransmuteFrom`]: TransmuteFrom
 /// [`safe_transmute`]: safe_transmute
-/// [soundness]: crate::transmute::sound#when-is-a-transmutation-sound
-/// [safety]: crate::transmute::safe
+/// [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+/// [safety]: crate::transmute::safe_transmutation
 pub unsafe trait TransmuteInto<U, O = ()>: UnsafeTransmuteInto<U>
 where
     O: neglect::TransmuteOptions,
@@ -105,8 +105,8 @@ where
 ///
 /// [`TransmuteInto`]: TransmuteInto
 /// [`safe_transmute`]: safe_transmute
-/// [soundness]: crate::transmute::sound#when-is-a-transmutation-sound
-/// [safety]: crate::transmute::safe
+/// [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+/// [safety]: crate::transmute::safe_transmutation
 pub unsafe trait TransmuteFrom<T, O = ()>: Sized
 where
     O: neglect::TransmuteOptions,
@@ -139,8 +139,8 @@ where
 ///
 /// [`TransmuteFrom`]: TransmuteFrom
 /// [`TransmuteInto`]: TransmuteInto
-/// [soundness]: crate::transmute::sound#when-is-a-transmutation-sound
-/// [safety]: crate::transmute::safe
+/// [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+/// [safety]: crate::transmute::safe_transmutation
 #[inline(always)]
 pub fn safe_transmute<T, U, O>(from: T) -> U
 where
@@ -170,8 +170,8 @@ where
 ///
 /// [`UnsafeTransmuteFrom`]: UnsafeTransmuteFrom
 /// [`unsafe_transmute`]: unsafe_transmute
-/// [soundness]: crate::transmute::sound#when-is-a-transmutation-sound
-/// [safety]: crate::safe
+/// [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+/// [safety]: crate::transmute::safe_transmutation
 pub unsafe trait UnsafeTransmuteInto<U, O = ()>: Sized
 where
     O: neglect::UnsafeTransmuteOptions,
@@ -199,10 +199,10 @@ where
 ///
 /// See also [`unsafe_transmute`].
 ///
-/// [`UnsafeTransmuteInto`]: crate::TransmuteInto
-/// [`unsafe_transmute`]: crate::unsafe_transmute
-/// [soundness]: crate::sound#when-is-a-transmutation-sound
-/// [safety]: crate::safe
+/// [`UnsafeTransmuteInto`]: crate::transmute::TransmuteInto
+/// [`unsafe_transmute`]: crate::transmute::unsafe_transmute
+/// [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+/// [safety]: crate::transmute::safe_transmutation
 pub unsafe trait UnsafeTransmuteFrom<T, O = ()>: Sized
 where
     O: neglect::UnsafeTransmuteOptions,
@@ -240,8 +240,8 @@ where
 /// additional validity restrictions in its constructor(s). This function
 /// bypasses those restrictions, and may lead to later unsoundness.
 ///
-/// [soundness]: crate::sound#when-is-a-transmutation-sound
-/// [safety]: crate::safe
+/// [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+/// [safety]: crate::transmute::safe_transmutation
 #[inline(always)]
 pub unsafe fn unsafe_transmute<T, U, O>(from: T) -> U
 where
