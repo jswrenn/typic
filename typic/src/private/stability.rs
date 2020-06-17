@@ -21,13 +21,13 @@ use crate::private::highlevel::Public;
 pub use typic_derive::StableABI;
 
 /// Assert that `Self` is always transmutable into `Type`.
-pub trait TransmutableInto
+pub unsafe trait TransmutableInto
 {
     type Type: Layout;
 }
 
 /// Assert that `Self` is always transmutable from `Type`.
-pub trait TransmutableFrom
+pub unsafe trait TransmutableFrom
 {
     type Type: Layout;
 }
