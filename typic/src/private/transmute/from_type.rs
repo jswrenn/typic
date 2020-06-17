@@ -35,15 +35,15 @@ where
 unsafe impl<T, U, Variance, Alignment, Transparency, Validity>
 FromType<T, Variance, Alignment, Transparency, Stable, Validity> for U
 where
-    T: Bound<Upper> + Layout<Public>,
-    U: Bound<Lower> + Layout<Public>,
+    T: TransmutableFrom + Layout<Public>,
+    U: TransmutableInto + Layout<Public>,
 
     // If stability is being enforced, then
     // the widest extent of the source type
     // must be transmutable into the narrowest
     // extent of the destination type.
-    <U as Bound<Lower>>::Type:
-      FromType<<T as Bound<Upper>>::Type,
+    <U as TransmutableInto>::Type:
+      FromType<<T as TransmutableFrom>::Type,
         Variance,
         Alignment,
         Transparency,

@@ -11,7 +11,7 @@ use crate::private::layout::Layout;
 use crate::private::num::*;
 use crate::private::target::PointerWidth;
 
-use crate::stability::{self, Bound};
+use crate::stability::{self, TransmutableInto, TransmutableFrom};
 
 macro_rules! primitive_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
@@ -22,7 +22,11 @@ macro_rules! primitive_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl<D: Direction> Bound<D> for $ty {
+            impl TransmutableFrom for $ty {
+                type Type = Self;
+            }
+
+            impl TransmutableInto for $ty {
                 type Type = Self;
             }
 
@@ -80,7 +84,11 @@ macro_rules! nonzero_layout {
                 #[doc(hidden)] type HighLevel = Self;
             }
 
-            impl<D: Direction> Bound<D> for $ty {
+            impl TransmutableFrom for $ty {
+                type Type = Self;
+            }
+
+            impl TransmutableInto for $ty {
                 type Type = Self;
             }
 
@@ -121,7 +129,11 @@ impl Type for () {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<D: Direction> Bound<D> for () {
+impl TransmutableFrom for () {
+    type Type = Self;
+}
+
+impl TransmutableInto for () {
     type Type = Self;
 }
 
@@ -135,7 +147,12 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, D: Direction, T> Bound<D> for &'a T
+impl<'a, T> TransmutableFrom for &'a T
+{
+    type Type = Self;
+}
+
+impl<'a, T> TransmutableInto for &'a T
 {
     type Type = Self;
 }
@@ -157,7 +174,12 @@ where
     type Align = PointerWidth;
 }
 
-impl<'a, D: Direction, T> Bound<D> for &'a mut T
+impl<'a, T> TransmutableFrom for &'a mut T
+{
+    type Type = Self;
+}
+
+impl<'a, T> TransmutableInto for &'a mut T
 {
     type Type = Self;
 }
@@ -180,7 +202,11 @@ where
     type Align = PointerWidth;
 }
 
-impl<D: Direction, T> Bound<D> for *const T {
+impl<T> TransmutableFrom for *const T {
+    type Type = Self;
+}
+
+impl<T> TransmutableInto for *const T {
     type Type = Self;
 }
 
@@ -201,7 +227,11 @@ where
     type Align = PointerWidth;
 }
 
-impl<D: Direction, T> Bound<D> for *mut T {
+impl<T> TransmutableFrom for *mut T {
+    type Type = Self;
+}
+
+impl<T> TransmutableInto for *mut T {
     type Type = Self;
 }
 
@@ -229,7 +259,11 @@ impl<T> Type for AtomicPtr<T> {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<D: Direction, T> Bound<D> for AtomicPtr<T> {
+impl<T> TransmutableFrom for AtomicPtr<T> {
+    type Type = Self;
+}
+
+impl<T> TransmutableInto for AtomicPtr<T> {
     type Type = Self;
 }
 
@@ -255,9 +289,14 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<D: Direction, T: Bound<D>> Bound<D> for Cell<T>
+impl<T: TransmutableFrom> TransmutableFrom for Cell<T>
 {
-    type Type = <T as Bound<D>>::Type;
+    type Type = <T as TransmutableFrom>::Type;
+}
+
+impl<T: TransmutableInto> TransmutableInto for Cell<T>
+{
+    type Type = <T as TransmutableInto>::Type;
 }
 
 #[rustfmt::skip]
@@ -270,9 +309,14 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-impl<D: Direction, T: Bound<D>> Bound<D> for UnsafeCell<T>
+impl<T: TransmutableInto> TransmutableInto for UnsafeCell<T>
 {
-    type Type = <T as Bound<D>>::Type;
+    type Type = <T as TransmutableInto>::Type;
+}
+
+impl<T: TransmutableFrom> TransmutableFrom for UnsafeCell<T>
+{
+    type Type = <T as TransmutableFrom>::Type;
 }
 
 macro_rules! array_layout {
@@ -284,11 +328,18 @@ macro_rules! array_layout {
             #[doc(hidden)] type HighLevel = Self;
         }
 
-        impl<D: Direction, T: Bound<D>> Bound<D> for [T; $n]
+        impl<T: TransmutableFrom> TransmutableFrom for [T; $n]
         where
-            [<T as Bound<D>>::Type; $n]: Layout
+            [<T as TransmutableFrom>::Type; $n]: Layout
         {
-            type Type = [<T as Bound<D>>::Type; $n];
+            type Type = [<T as TransmutableFrom>::Type; $n];
+        }
+
+        impl<T: TransmutableInto> TransmutableInto for [T; $n]
+        where
+            [<T as TransmutableInto>::Type; $n]: Layout
+        {
+            type Type = [<T as TransmutableInto>::Type; $n];
         }
 
         impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
@@ -355,13 +406,22 @@ where
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<D: Direction, T, N> Bound<D> for GenericArray<T, N>
+impl<T, N> TransmutableFrom for GenericArray<T, N>
 where
-    N: ArrayLength<T> + ArrayLength<<T as Bound<D>>::Type>,
-    T: Bound<D>,
-    GenericArray<<T as Bound<D>>::Type, N>: Layout,
+    N: ArrayLength<T> + ArrayLength<<T as TransmutableFrom>::Type>,
+    T: TransmutableFrom,
+    GenericArray<<T as TransmutableFrom>::Type, N>: Layout,
 {
-    type Type = GenericArray<<T as Bound<D>>::Type, N>;
+    type Type = GenericArray<<T as TransmutableFrom>::Type, N>;
+}
+
+impl<T, N> TransmutableInto for GenericArray<T, N>
+where
+    N: ArrayLength<T> + ArrayLength<<T as TransmutableInto>::Type>,
+    T: TransmutableInto,
+    GenericArray<<T as TransmutableInto>::Type, N>: Layout,
+{
+    type Type = GenericArray<<T as TransmutableInto>::Type, N>;
 }
 
 impl<ReprAlign, ReprPacked, Visibility, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>

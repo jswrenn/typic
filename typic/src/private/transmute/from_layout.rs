@@ -244,8 +244,8 @@ mod reference_to {
 
     impl<T, U> FromAlignment<T, Stable> for U
     where
-        U: Bound<Upper>,
-        T: Bound<Lower>,
+        U: TransmutableInto,
+        T: TransmutableFrom,
     {}
 
     impl<T, U> FromAlignment<T, Unstable> for U {}

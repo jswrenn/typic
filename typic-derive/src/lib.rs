@@ -23,12 +23,12 @@ pub fn stable_abi(input: TokenStream) -> TokenStream {
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     (quote! {
-        impl #impl_generics typic::stability::Bound<typic::stability::Upper>
+        impl #impl_generics typic::stability::TransmutableFrom
         for #ident #ty_generics #where_clause
         {
             type Type = Self;
         }
-        impl #impl_generics typic::stability::Bound<typic::stability::Lower>
+        impl #impl_generics typic::stability::TransmutableInto
         for #ident #ty_generics #where_clause
         {
             type Type = Self;
