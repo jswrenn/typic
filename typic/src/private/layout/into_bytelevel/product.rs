@@ -18,7 +18,7 @@ where
 {
     type Output =
         bytelevel::PCons<
-            PaddingSlot<<Offset as PadTo<ReprAlign>>::Output>,
+            PaddingSlot<Visibility, <Offset as PadTo<ReprAlign>>::Output>,
             bytelevel::PNil
         >;
 
