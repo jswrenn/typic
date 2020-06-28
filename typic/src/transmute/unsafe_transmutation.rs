@@ -65,11 +65,11 @@
 //! ```rust
 //! # use typic::docs::prelude::*;
 //! #[typic::repr(C)]
-//! #[derive(Default)]
+//! #[derive(Default, StableABI)]
 //! struct Padded(pub u8, pub u16, pub u8);
 //!
 //! #[typic::repr(C)]
-//! #[derive(Default)]
+//! #[derive(Default, StableABI)]
 //! struct Packed(pub u16, pub u16, pub u16);
 //!
 //! assert_eq!(mem::size_of::<Packed>(), mem::size_of::<Padded>());
