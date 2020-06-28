@@ -17,6 +17,6 @@ const _: () = {
     assert_type_eq_all!(<C as Layout<Public>>::Size, U0);
     assert_type_eq_all!(
         <C as Layout<Public>>::ByteLevel,
-        blvl::PCons<PaddingSlot<U0>, blvl::PNil>
+        blvl::PCons<PaddingSlot<Public, U0>, blvl::PNil>
     );
 };

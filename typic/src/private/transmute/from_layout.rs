@@ -308,18 +308,18 @@ mod test {
     use crate::private::bytelevel as blvl;
 
     subsumes::<
-      P![PaddingSlot<U2>],
+      P![PaddingSlot<Pub, U2>],
       P![]
     >();
 
     subsumes::<
-      P![PaddingSlot<U2>],
-      P![PaddingSlot<U1>]
+      P![PaddingSlot<Pub, U2>],
+      P![PaddingSlot<Pub, U1>]
     >();
 
     subsumes::<
-      P![PaddingSlot<U1>, PaddingSlot<U1>],
-      P![PaddingSlot<U2>]
+      P![PaddingSlot<Pub, U1>, PaddingSlot<Pub, U1>],
+      P![PaddingSlot<Pub, U2>]
     >();
   }
 }

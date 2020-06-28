@@ -81,6 +81,42 @@
 //! internal validity requirements, as users of the type are free to manipulate
 //! its fields direclty via the `.` operator.
 //!
+//! This rule applies to private fields that are zero-sized. It is
+//! safe to transmute from `Bar` to `Foo`, because `Foo`'s constructor
+//! is `pub`:
+//! ```rust
+//! # use typic::docs::prelude::*;
+//! #[typic::repr(C)]
+//! #[derive(StableABI)]
+//! struct ZST;
+//!
+//! #[typic::repr(C)]
+//! #[derive(StableABI)]
+//! struct Foo(pub ZST);
+//!
+//! #[typic::repr(C)]
+//! #[derive(StableABI)]
+//! struct Bar(ZST);
+//!
+//! let _ : Foo = Bar(ZST).transmute_into();
+//! ```
+//! It is *not* safe to transmute from `Foo` to `Bar`, because `Bar`'s
+//! constructor is not public:
+//! ```compile_fail
+//! # use typic::docs::prelude::*;
+//! # #[typic::repr(C)]
+//! # #[derive(StableABI)]
+//! # struct ZST;
+//! # 
+//! # #[typic::repr(C)]
+//! # #[derive(StableABI)]
+//! # struct Foo(pub ZST);
+//! # 
+//! # #[typic::repr(C)]
+//! # #[derive(StableABI)]
+//! # struct Bar(ZST);
+//! let _ : Bar = Foo(ZST).transmute_into();
+//! ```
 //! ## Safely transmuting references
 //! When safely transmuting owned values, all non-padding bytes in the source
 //! type must correspond to `pub` bytes in the destination type:

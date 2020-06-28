@@ -32,7 +32,7 @@ where
     num::Minimum<Packed, <F as Layout<Minimum<V, Visibility>>>::Align>: Unsigned,
 {
     type Output = PCons<
-        PaddingSlot<<F as PaddingNeededForField<Minimum<V, Visibility>, Offset, Packed>>::Output>,
+        PaddingSlot<Visibility, <F as PaddingNeededForField<Minimum<V, Visibility>, Offset, Packed>>::Output>,
         <F as Layout<Minimum<V, Visibility>>>::ByteLevel,
     >;
 
