@@ -36,12 +36,18 @@ impl<ReprAlign, ReprPacked, Visibility, Offset, F, R>
 IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for highlevel::PCons<F, R>
 where
     F: FieldIntoByteLevel<ReprPacked, Visibility, Offset>,
-    R: IntoByteLevel<ReprAlign, ReprPacked, Visibility, <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset>,
+    R: IntoByteLevel<num::Maximum<
+        <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align,
+        ReprAlign,
+    >, ReprPacked, Visibility, <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset>,
 
     <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Output:
         bytelevel::Add<
             <R as IntoByteLevel<
-                ReprAlign,
+                num::Maximum<
+                    <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align,
+                    ReprAlign,
+                >,
                 ReprPacked,
                 Visibility,
                 <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset,
@@ -49,31 +55,21 @@ where
         >,
 
     <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align:
-        num::Max<
-            <R as IntoByteLevel<
-                ReprAlign,
-                ReprPacked,
-                Visibility,
-                <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset,
-            >>::Align,
-        >,
+        num::Max<ReprAlign>,
 
     num::Maximum<
         <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align,
-        <R as IntoByteLevel<
-            ReprAlign,
-            ReprPacked,
-            Visibility,
-            <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset,
-        >>::Align,
+        ReprAlign,
     >: Unsigned,
-
 {
     type Output =
         bytelevel::Sum<
             <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Output,
             <R as IntoByteLevel<
-                ReprAlign,
+                num::Maximum<
+                    <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align,
+                    ReprAlign,
+                >,
                 ReprPacked,
                 Visibility,
                 <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset,
@@ -82,7 +78,10 @@ where
 
     type Offset =
         <R as IntoByteLevel<
-            ReprAlign,
+            num::Maximum<
+                <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align,
+                ReprAlign,
+            >,
             ReprPacked,
             Visibility,
             <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset,
@@ -91,11 +90,6 @@ where
     type Align =
         num::Maximum<
             <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Align,
-            <R as IntoByteLevel<
-                ReprAlign,
-                ReprPacked,
-                Visibility,
-                <F as FieldIntoByteLevel<ReprPacked, Visibility, Offset>>::Offset,
-            >>::Align,
+            ReprAlign,
         >;
 }

@@ -107,21 +107,21 @@ mod bytes_to {
       ($($TKind: path => $UKind: path,)*) => {
         $(
           /// Regardless of variance and transparency, this `pub` to `pub` conversion is safe.
-          impl<A, B, C, D, Variance, Transparency, Validity>
-          BytesFromBytes<Bytes<Pub,  $TKind, num::UInt<A, B>>, Variance, Transparency, Validity>
-                     for Bytes<Pub,  $UKind, num::UInt<C, D>>
+          impl<TSize, USize, Variance, Transparency, Validity>
+          BytesFromBytes<Bytes<Pub,  $TKind, TSize>, Variance, Transparency, Validity>
+                     for Bytes<Pub,  $UKind, USize>
           {}
 
           /// A `priv` to `pub` conversion is safe only if the transmutation is variant.
-          impl<A, B, C, D, Transparency, Validity>
-          BytesFromBytes<Bytes<Priv, $TKind, num::UInt<A, B>>, Variant, Transparency, Validity>
-                     for Bytes<Pub,  $UKind, num::UInt<C, D>>
+          impl<TSize, USize, Transparency, Validity>
+          BytesFromBytes<Bytes<Priv, $TKind, TSize>, Variant, Transparency, Validity>
+                     for Bytes<Pub,  $UKind, USize>
           {}
 
           /// A `priv`/`pub` to `priv` conversion is only safe if transparency is unchecked.
-          impl<A, B, C, D, TVis, Variance, Validity>
-          BytesFromBytes<Bytes<TVis, $TKind, num::UInt<A, B>>, Variance, Unenforced, Validity>
-                     for Bytes<Priv, $UKind, num::UInt<C, D>>
+          impl<TSize, USize, TVis, Variance, Validity>
+          BytesFromBytes<Bytes<TVis, $TKind, TSize>, Variance, Unenforced, Validity>
+                     for Bytes<Priv, $UKind, USize>
           {}
         )*
       };
@@ -137,21 +137,21 @@ mod bytes_to {
       ($($TKind: path => $UKind: path,)*) => {
         $(
           /// Regardless of variance and transparency, this `pub` to `pub` conversion is safe.
-          impl<A, B, C, D, Transparency, Validity>
-          BytesFromBytes<Bytes<Pub,  $TKind, num::UInt<A, B>>, Variant, Transparency, Validity>
-                     for Bytes<Pub,  $UKind, num::UInt<C, D>>
+          impl<TSize, USize, Transparency, Validity>
+          BytesFromBytes<Bytes<Pub,  $TKind, TSize>, Variant, Transparency, Validity>
+                     for Bytes<Pub,  $UKind, USize>
           {}
 
           /// A `priv` to `pub` conversion is safe only if the transmutation is variant.
-          impl<A, B, C, D, Transparency, Validity>
-          BytesFromBytes<Bytes<Priv, $TKind, num::UInt<A, B>>, Variant, Transparency, Validity>
-                     for Bytes<Pub,  $UKind, num::UInt<C, D>>
+          impl<TSize, USize, Transparency, Validity>
+          BytesFromBytes<Bytes<Priv, $TKind, TSize>, Variant, Transparency, Validity>
+                     for Bytes<Pub,  $UKind, USize>
           {}
 
           /// A `priv`/`pub` to `priv` conversion is only safe if transparency is unchecked.
-          impl<A, B, C, D, TVis, Validity>
-          BytesFromBytes<Bytes<TVis, $TKind, num::UInt<A, B>>, Variant, Unenforced, Validity>
-                     for Bytes<Priv, $UKind, num::UInt<C, D>>
+          impl<TSize, USize, TVis, Validity>
+          BytesFromBytes<Bytes<TVis, $TKind, TSize>, Variant, Unenforced, Validity>
+                     for Bytes<Priv, $UKind, USize>
           {}
         )*
       };
@@ -163,19 +163,23 @@ mod bytes_to {
       kind::Initialized   => kind::Uninitialized ,
     ];
 
-
     // If either sizes are empty, `BytesFromBytes` vacuously holds.
-    impl<TKind, UKind, Variance, Transparency, Validity> BytesFromBytes<Bytes<Pub, TKind, num::UTerm>, Variance, Transparency, Validity> for Bytes<Pub, UKind, num::UTerm> {}
-    impl<TKind, A, B, UKind, Variance, Transparency, Validity> BytesFromBytes<Bytes<Pub, TKind, num::UInt<A, B>>, Variance, Transparency, Validity> for Bytes<Pub, UKind, num::UTerm> {}
-    impl<TKind, UKind, A, B, Variance, Transparency, Validity> BytesFromBytes<Bytes<Pub, TKind, num::UTerm>, Variance, Transparency, Validity> for Bytes<Pub, UKind, num::UInt<A, B>> {}
+    // this is sketchy, but I think it's alright because of how
+    // BytesFromBytes is used alongside `Consume`. Unfortunately,
+    // it's been months since I last touched this code.
+    // todo: refactor all of this.
+    impl<A, B, Variance, Transparency, Validity>
+      BytesFromBytes<Bytes<Pub, kind::Uninitialized, num::UTerm>, Variance, Transparency, Validity>
+    for              Bytes<Pub, kind::Initialized, num::UInt<A, B>> {}
 
-    /// [Bytes|_] -> [Reference|_]
-    #[rustfmt::skip] unsafe impl<'u, TVis, TKind, TRest, UVis, UK, U, URest, Options>
-    FromLayout<PCons<Bytes<TVis, TKind, num::UTerm>, TRest>, Options>
-         for PCons<Reference<'u, UVis, UK, U>, URest>
-    where
-        Self: FromLayout<TRest, Options>,
-    {}
+    // todo: wtf. why did I write this?
+    // /// [Bytes|_] -> [Reference|_]
+    // #[rustfmt::skip] unsafe impl<'u, TVis, TKind, TRest, UVis, UK, U, URest, Options>
+    // FromLayout<PCons<Bytes<TVis, TKind, num::UTerm>, TRest>, Options>
+    //      for PCons<Reference<'u, UVis, UK, U>, URest>
+    // where
+    //     Self: FromLayout<TRest, Options>,
+    // {}
 }
 
 mod array_to {

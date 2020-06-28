@@ -25,8 +25,8 @@
 //! let _ : u32 = Foo(16, 12).transmute_into(); // Compile Error!
 //! ```
 //!
-//! [soundness]: crate::sound#when-is-a-transmutation-sound
-//! [safety]: crate::safe
+//! [soundness]: crate::transmute::unsafe_transmutation#when-is-a-transmutation-sound
+//! [safety]: crate::transmute::safe_transmutation
 
 #[doc(hidden)]
 pub mod docs {
