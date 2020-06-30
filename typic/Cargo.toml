@@ -1,6 +1,6 @@
 [package]
 name = "typic"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["Jack Wrenn <me@jswrenn.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
