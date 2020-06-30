@@ -1,4 +1,4 @@
-//! A type grammar for communicating layout guarantees.
+//! Traits for communicating layout guarantees.
 //!
 //! ```rust
 //! use typic::{self, stability::*};

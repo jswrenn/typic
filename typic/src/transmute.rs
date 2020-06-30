@@ -70,5 +70,6 @@ pub mod neglect {
         Alignment,
         Stability,
         Transparency,
+        Validity,
     };
 }
