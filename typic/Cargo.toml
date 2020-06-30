@@ -11,7 +11,7 @@ categories = ["rust-patterns", "no-std"]
 
 [dependencies]
 typenum = "1.10.0"
-typic-derive = { version = "^0.2.0", path = "../typic-derive" }
+typic-derive = { version = "^0.3.0", path = "../typic-derive" }
 generic-array = "0.13.2"
 
 [dev-dependencies]
