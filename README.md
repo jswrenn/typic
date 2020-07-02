@@ -19,7 +19,7 @@ let _ : Foo = u32::default().transmute_into(); // Alchemy achieved!
 let _ : u32 = Foo::default().transmute_into(); // Compiler Error!
 ```
 
-[soundness]: https://docs.rs/typic/latest/typic/sound/
+[soundness]: https://docs.rs/typic/latest/typic/transmute/unsafe_transmutation
 [safety]: https://docs.rs/typic/latest/typic/safe/
 
 #### License
