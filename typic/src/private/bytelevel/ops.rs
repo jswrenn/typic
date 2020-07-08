@@ -32,9 +32,7 @@ impl<P: Product> Add<PNil> for P {
     type Output = Self;
 }
 
-impl<RH, RT> Add<PCons<RH, RT>> for PNil
-where
-{
+impl<RH, RT> Add<PCons<RH, RT>> for PNil {
     type Output = PCons<RH, RT>;
 }
 

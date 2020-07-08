@@ -51,25 +51,12 @@ pub mod unsafe_transmutation;
 
 #[doc(inline)]
 pub use crate::private::transmute::{
-    safe_transmute,
-    StableTransmuteInto,
-    TransmuteFrom,
-    TransmuteInto,
-    neglect::TransmuteOptions,
-
-    unsafe_transmute,
-    UnsafeTransmuteFrom,
-    UnsafeTransmuteInto,
-    neglect::UnsafeTransmuteOptions,
+    neglect::TransmuteOptions, neglect::UnsafeTransmuteOptions, safe_transmute, unsafe_transmute,
+    StableTransmuteInto, TransmuteFrom, TransmuteInto, UnsafeTransmuteFrom, UnsafeTransmuteInto,
 };
 
 /// What static checks should Typic neglect?
 pub mod neglect {
     #[doc(inline)]
-    pub use crate::private::transmute::neglect::{
-        Alignment,
-        Stability,
-        Transparency,
-        Validity,
-    };
+    pub use crate::private::transmute::neglect::{Alignment, Stability, Transparency, Validity};
 }

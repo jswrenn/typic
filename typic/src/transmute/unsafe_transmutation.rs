@@ -193,18 +193,11 @@
 
 #[doc(inline)]
 pub use crate::transmute::{
-    unsafe_transmute,
-    UnsafeTransmuteFrom,
-    UnsafeTransmuteInto,
-    UnsafeTransmuteOptions
+    unsafe_transmute, UnsafeTransmuteFrom, UnsafeTransmuteInto, UnsafeTransmuteOptions,
 };
 
 /// Configuration options for ***sound*** transmutations.
 pub mod neglect {
     #[doc(inline)]
-    pub use crate::transmute::neglect::{
-        Alignment,
-        Transparency,
-        Stability,
-    };
+    pub use crate::transmute::neglect::{Alignment, Stability, Transparency};
 }

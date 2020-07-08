@@ -107,11 +107,11 @@
 //! # #[typic::repr(C)]
 //! # #[derive(StableABI)]
 //! # struct ZST;
-//! # 
+//! #
 //! # #[typic::repr(C)]
 //! # #[derive(StableABI)]
 //! # struct Foo(pub ZST);
-//! # 
+//! #
 //! # #[typic::repr(C)]
 //! # #[derive(StableABI)]
 //! # struct Bar(ZST);
@@ -150,11 +150,7 @@
 //! ```
 
 pub use super::{
-    safe_transmute,
-    TransmuteFrom,
-    TransmuteInto,
-    StableTransmuteInto,
-    TransmuteOptions
+    safe_transmute, StableTransmuteInto, TransmuteFrom, TransmuteInto, TransmuteOptions,
 };
 
 /// Configuration options for ***safe*** transmutations.

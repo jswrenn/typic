@@ -1,17 +1,17 @@
-use crate::stability::*;
 use super::IntoByteLevel;
 use crate::private::bytelevel::{
     slot::{Array, InitializedSlot, SharedRef, UniqueRef},
     NonZeroSeq, PCons, PNil, ReferenceBytes,
 };
-use crate::private::highlevel::{MaxAlign, MinAlign};
 use crate::private::highlevel::Type;
+use crate::private::highlevel::{MaxAlign, MinAlign};
 use crate::private::layout::Layout;
+use crate::stability::*;
 
 use crate::private::num::*;
 use crate::private::target::PointerWidth;
 
-use crate::stability::{self, TransmutableInto, TransmutableFrom};
+use crate::stability::{self, TransmutableFrom, TransmutableInto};
 
 macro_rules! primitive_layout {
     ($($ty: ty { size: $size: ty, align: $align: ty };)*) => {
@@ -137,7 +137,8 @@ unsafe impl TransmutableInto for () {
     type Type = Self;
 }
 
-impl<ReprAlign, ReprPacked, Visibility, Offset> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for ()
+impl<ReprAlign, ReprPacked, Visibility, Offset>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for ()
 where
     Offset: Unsigned,
     PointerWidth: Unsigned,
@@ -147,13 +148,11 @@ where
     type Align = PointerWidth;
 }
 
-unsafe impl<'a, T> TransmutableFrom for &'a T
-{
+unsafe impl<'a, T> TransmutableFrom for &'a T {
     type Type = Self;
 }
 
-unsafe impl<'a, T> TransmutableInto for &'a T
-{
+unsafe impl<'a, T> TransmutableInto for &'a T {
     type Type = Self;
 }
 
@@ -164,7 +163,8 @@ impl<'a, T> Type for &'a T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<'a, ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for &'a T
+impl<'a, ReprAlign, ReprPacked, Visibility, Offset, T>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for &'a T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
@@ -174,13 +174,11 @@ where
     type Align = PointerWidth;
 }
 
-unsafe impl<'a, T> TransmutableFrom for &'a mut T
-{
+unsafe impl<'a, T> TransmutableFrom for &'a mut T {
     type Type = Self;
 }
 
-unsafe impl<'a, T> TransmutableInto for &'a mut T
-{
+unsafe impl<'a, T> TransmutableInto for &'a mut T {
     type Type = Self;
 }
 
@@ -191,8 +189,8 @@ impl<'a, T> Type for &'a mut T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<'a, ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
-    for &'a mut T
+impl<'a, ReprAlign, ReprPacked, Visibility, Offset, T>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for &'a mut T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
@@ -217,7 +215,8 @@ impl<T> Type for *const T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for *const T
+impl<ReprAlign, ReprPacked, Visibility, Offset, T>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for *const T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
@@ -242,7 +241,8 @@ impl<T> Type for *mut T {
     #[doc(hidden)] type HighLevel = Self;
 }
 
-impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for *mut T
+impl<ReprAlign, ReprPacked, Visibility, Offset, T>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for *mut T
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
@@ -267,7 +267,8 @@ unsafe impl<T> TransmutableInto for AtomicPtr<T> {
     type Type = Self;
 }
 
-impl<ReprAlign, ReprPacked, Visibility, Offset, T> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for AtomicPtr<T>
+impl<ReprAlign, ReprPacked, Visibility, Offset, T>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for AtomicPtr<T>
 where
     Offset: Add<PointerWidth>,
     Sum<Offset, PointerWidth>: Unsigned,
@@ -289,13 +290,11 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-unsafe impl<T: TransmutableFrom> TransmutableFrom for Cell<T>
-{
+unsafe impl<T: TransmutableFrom> TransmutableFrom for Cell<T> {
     type Type = <T as TransmutableFrom>::Type;
 }
 
-unsafe impl<T: TransmutableInto> TransmutableInto for Cell<T>
-{
+unsafe impl<T: TransmutableInto> TransmutableInto for Cell<T> {
     type Type = <T as TransmutableInto>::Type;
 }
 
@@ -309,13 +308,11 @@ where
     #[doc(hidden)] type HighLevel =  <T as Type>::HighLevel;
 }
 
-unsafe impl<T: TransmutableInto> TransmutableInto for UnsafeCell<T>
-{
+unsafe impl<T: TransmutableInto> TransmutableInto for UnsafeCell<T> {
     type Type = <T as TransmutableInto>::Type;
 }
 
-unsafe impl<T: TransmutableFrom> TransmutableFrom for UnsafeCell<T>
-{
+unsafe impl<T: TransmutableFrom> TransmutableFrom for UnsafeCell<T> {
     type Type = <T as TransmutableFrom>::Type;
 }
 
@@ -395,15 +392,18 @@ array_layout![
   32, U32
 ];
 
-use generic_array::{GenericArray, ArrayLength};
+use generic_array::{ArrayLength, GenericArray};
 
 impl<T, N> Type for GenericArray<T, N>
 where
     N: ArrayLength<T>,
 {
-    #[doc(hidden)] type ReprAlign  = MinAlign;
-    #[doc(hidden)] type ReprPacked = MaxAlign;
-    #[doc(hidden)] type HighLevel = Self;
+    #[doc(hidden)]
+    type ReprAlign = MinAlign;
+    #[doc(hidden)]
+    type ReprPacked = MaxAlign;
+    #[doc(hidden)]
+    type HighLevel = Self;
 }
 
 unsafe impl<T, N> TransmutableFrom for GenericArray<T, N>
@@ -424,8 +424,8 @@ where
     type Type = GenericArray<<T as TransmutableInto>::Type, N>;
 }
 
-impl<ReprAlign, ReprPacked, Visibility, Offset, T, N> IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset>
-    for GenericArray<T, N>
+impl<ReprAlign, ReprPacked, Visibility, Offset, T, N>
+    IntoByteLevel<ReprAlign, ReprPacked, Visibility, Offset> for GenericArray<T, N>
 where
     T: Layout<Visibility>,
     N: ArrayLength<T>,

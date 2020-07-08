@@ -10,8 +10,8 @@
 
 //use crate::private::layout::{self, Layout};
 use crate::layout::Layout;
-use crate::transmute::{self, neglect, TransmuteFrom, TransmuteInto};
 use crate::private::highlevel::Public;
+use crate::transmute::{self, neglect, TransmuteFrom, TransmuteInto};
 
 /// Implements [`TransmutableInto`] and [`TransmutableFrom`] for a
 /// type, using that type as its own ABI bound.
@@ -21,13 +21,11 @@ use crate::private::highlevel::Public;
 pub use typic_derive::StableABI;
 
 /// Assert that `Self` is always transmutable into `Type`.
-pub unsafe trait TransmutableInto
-{
+pub unsafe trait TransmutableInto {
     type Type: Layout;
 }
 
 /// Assert that `Self` is always transmutable from `Type`.
-pub unsafe trait TransmutableFrom
-{
+pub unsafe trait TransmutableFrom {
     type Type: Layout;
 }

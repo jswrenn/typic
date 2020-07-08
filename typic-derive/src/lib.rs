@@ -16,9 +16,7 @@ use syn::{Attribute, Lit, Meta, NestedMeta, Visibility};
 pub fn stable_abi(input: TokenStream) -> TokenStream {
     use syn::DeriveInput;
     let DeriveInput {
-      ident,
-      generics,
-      ..
+        ident, generics, ..
     } = parse_macro_input!(input as DeriveInput);
 
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
@@ -34,8 +32,9 @@ pub fn stable_abi(input: TokenStream) -> TokenStream {
         {
             type Type = Self;
         }
-    
-    }).into()
+
+    })
+    .into()
 }
 
 #[proc_macro_attribute]
@@ -118,24 +117,21 @@ fn impl_struct(definition: syn::ItemStruct) -> TokenStream {
     let fields = definition
         .fields
         .iter()
-        .rfold(
-            quote! {typic::internal::PNil},
-            |rest, field| {
-              let vis = if let Visibility::Public(_) = field.vis {
+        .rfold(quote! {typic::internal::PNil}, |rest, field| {
+            let vis = if let Visibility::Public(_) = field.vis {
                 format_ident!("Public")
-              } else {
+            } else {
                 format_ident!("Private")
-              };
-              let field = field.ty.clone();
-              quote! {
-                typic::internal::PCons<
-                  typic::internal::Field<
-                    typic::internal::field::#vis ,
-                    #field>,
-                  #rest>
-              }
-            },
-        );
+            };
+            let field = field.ty.clone();
+            quote! {
+              typic::internal::PCons<
+                typic::internal::Field<
+                  typic::internal::field::#vis ,
+                  #field>,
+                #rest>
+            }
+        });
 
     (quote! {
       #definition
