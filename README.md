@@ -1,3 +1,7 @@
+**ANNOUNCEMENT:** The primary purpose of Typic was to prototype zero-compromise designs for a safe transmute language feature. [Read the resulting RFC draft here](https://github.com/rust-lang/project-safe-transmute/pull/5)!
+
+---
+
 # Typic
 Typic helps you transmute fearlessly. It worries about the subtleties of
 ***[soundness]*** and ***[safety]*** so you don't have to!
