@@ -223,39 +223,33 @@ pub mod extras {
     pub mod zerocopy {
         use crate::layout::*;
         use crate::transmute::*;
-        use typenum::U1;
         use generic_array::{ArrayLength as Length, GenericArray as Array};
+        use typenum::U1;
 
         /// Indicates `Self` can be produced from an
         /// appropriately-sized array of arbitrarily
         /// initialized bytes.
-        pub unsafe trait FromBytes<O: TransmuteOptions = ()>
-        {}
+        pub unsafe trait FromBytes<O: TransmuteOptions = ()> {}
 
-        unsafe impl<T, O: TransmuteOptions> FromBytes<O> for T
-        where
+        unsafe impl<T, O: TransmuteOptions> FromBytes<O> for T where
             T: Layout + TransmuteFrom<Array<u8, SizeOf<T>>, O>
-        {}
-
+        {
+        }
 
         /// Indicates `Self` can be converted into an
         /// appropriately-sized array of arbitrarily
         /// initialized bytes.
         pub unsafe trait AsBytes<O: TransmuteOptions = ()> {}
 
-        unsafe impl<T, O: TransmuteOptions> AsBytes<O> for T
-        where
+        unsafe impl<T, O: TransmuteOptions> AsBytes<O> for T where
             T: Layout + TransmuteInto<Array<u8, SizeOf<T>>, O>
-        {}
-
+        {
+        }
 
         /// Indicates `Self` has no alignment requirement.
         pub trait Unaligned {}
 
-        impl<T> Unaligned for T
-        where
-            T: Layout<Align=U1>,
-        {}
+        impl<T> Unaligned for T where T: Layout<Align = U1> {}
     }
 
     /// [Bytemuck](https://docs.rs/bytemuck)-style casting functions.
@@ -276,7 +270,9 @@ pub mod extras {
         where
             &'t T: UnsafeTransmuteInto<&'u U, neglect::Alignment>,
         {
-            if align_of::<U>() > align_of::<T>() && (src as *const T as usize) % align_of::<U>() != 0 {
+            if align_of::<U>() > align_of::<T>()
+                && (src as *const T as usize) % align_of::<U>() != 0
+            {
                 None
             } else {
                 // Sound, because we dynamically enforce the alignment
@@ -285,9 +281,9 @@ pub mod extras {
             }
         }
 
+        use crate::layout::*;
         use core::slice;
         use generic_array::{ArrayLength as Length, GenericArray as Array};
-        use crate::layout::*;
 
         /// Try to convert a `&T` into `&U`.
         ///
@@ -318,9 +314,7 @@ pub mod extras {
                 None
             } else {
                 let len = size_of_val(src).checked_div(size_of::<U>()).unwrap_or(0);
-                Some(unsafe {
-                  slice::from_raw_parts(src.as_ptr() as *const U, len)
-                })
+                Some(unsafe { slice::from_raw_parts(src.as_ptr() as *const U, len) })
             }
         }
     }

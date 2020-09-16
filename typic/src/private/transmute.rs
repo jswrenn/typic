@@ -61,7 +61,7 @@ where
     /// Reinterprets the bits of `self` as type `U`.
     fn transmute_into(self) -> U
     where
-      Self: Sized;
+        Self: Sized;
 }
 
 unsafe impl<T, U, O> TransmuteInto<U, O> for T
@@ -88,8 +88,7 @@ where
     T: TransmuteInto<U>,
 {
     #[inline(always)]
-    fn transmute_into(self) -> U
-    {
+    fn transmute_into(self) -> U {
         self.transmute_into()
     }
 }
@@ -144,13 +143,14 @@ where
 #[inline(always)]
 pub fn safe_transmute<T, U, O>(from: T) -> U
 where
-    U: from_type::FromType<T,
+    U: from_type::FromType<
+        T,
         Variant,
         <O as neglect::UnsafeTransmuteOptions>::Alignment,
         <O as neglect::UnsafeTransmuteOptions>::Transparency,
         <O as neglect::UnsafeTransmuteOptions>::Stability,
         <O as neglect::UnsafeTransmuteOptions>::Validity,
-      >,
+    >,
     O: neglect::TransmuteOptions,
 {
     unsafe {
@@ -213,13 +213,14 @@ where
 
 unsafe impl<T, U, O> UnsafeTransmuteFrom<T, O> for U
 where
-    U: from_type::FromType<T,
+    U: from_type::FromType<
+        T,
         Variant,
         <O as neglect::UnsafeTransmuteOptions>::Alignment,
         <O as neglect::UnsafeTransmuteOptions>::Transparency,
         <O as neglect::UnsafeTransmuteOptions>::Stability,
         <O as neglect::UnsafeTransmuteOptions>::Validity,
-      >,
+    >,
     O: neglect::UnsafeTransmuteOptions,
 {
     #[inline(always)]
@@ -245,12 +246,14 @@ where
 #[inline(always)]
 pub unsafe fn unsafe_transmute<T, U, O>(from: T) -> U
 where
-    U: from_type::FromType<T,
+    U: from_type::FromType<
+        T,
         Variant,
         <O as neglect::UnsafeTransmuteOptions>::Alignment,
         <O as neglect::UnsafeTransmuteOptions>::Transparency,
         <O as neglect::UnsafeTransmuteOptions>::Stability,
-        <O as neglect::UnsafeTransmuteOptions>::Validity>,
+        <O as neglect::UnsafeTransmuteOptions>::Validity,
+    >,
     O: neglect::UnsafeTransmuteOptions,
 {
     let to = mem::transmute_copy(&from);

@@ -1,8 +1,8 @@
 //! Types for encoding the high-level representation of a type's structure.
 
 pub mod coproduct;
-pub mod product;
 pub mod field;
+pub mod product;
 
 use crate::private::num::Unsigned;
 
@@ -10,7 +10,7 @@ use crate::private::num::Unsigned;
 pub use typenum::consts::*;
 
 #[doc(inline)]
-pub use field::{Field, Public, Private};
+pub use field::{Field, Private, Public};
 
 #[doc(inline)]
 pub use coproduct::{Cons as CCons, Nil as CNil};
